@@ -1,0 +1,63 @@
+{
+  "name": "cto-brain",
+  "version": "0.1.0",
+  "description": "Portable CTO orchestration brain — skills, sync, gating, and agent adapters for multi-agent builds",
+  "type": "module",
+  "bin": {
+    "cto-brain": "bin/cto-brain.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    "templates",
+    "pipeline",
+    "schema",
+    "README.md",
+    "docs",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mkulyma/cto-brain.git"
+  },
+  "homepage": "https://github.com/mkulyma/cto-brain#readme",
+  "bugs": {
+    "url": "https://github.com/mkulyma/cto-brain/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "agentskills": {
+    "skills": [
+      "./skills/cto-orchestration",
+      "./skills/meta-brain",
+      "./skills/agentic-learning-loop",
+      "./skills/multi-agent-execution"
+    ]
+  },
+  "scripts": {
+    "test": "node test/skills-valid.mjs && node test/sync-idempotent.mjs && node test/gate-no-secrets.mjs && node test/cli-init.mjs && node test/router-providers.mjs && node test/router-select.mjs && node test/router-probe.mjs && node test/router-config.mjs && node test/router-discover.mjs && node test/router-stack.mjs && node test/router-cli.mjs",
+    "doctor": "node bin/cto-brain.mjs doctor",
+    "ci": "node bin/cto-brain.mjs gate check --home . && npm test",
+    "benchmark": "node scripts/benchmark-self.mjs",
+    "prepublishOnly": "node bin/cto-brain.mjs gate check --home . && npm test"
+  },
+  "keywords": [
+    "agent-skills",
+    "orchestration",
+    "cto",
+    "multi-agent",
+    "agentskills",
+    "claude-code",
+    "cursor",
+    "codex",
+    "skills"
+  ],
+  "license": "MIT",
+  "author": "mkulyma"
+}

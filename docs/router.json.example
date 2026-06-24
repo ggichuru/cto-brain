@@ -1,0 +1,13 @@
+{
+  "stacks": [
+    { "id": "desk-engine", "url": "http://127.0.0.1:8787", "type": "desk" },
+    { "id": "ollama", "url": "http://127.0.0.1:11434", "type": "ollama" }
+  ],
+  "routing": {
+    "defaultPrefer": "local",
+    "builder": { "tier": "local", "model": "qwen2.5-coder:14b", "provider": "ollama" },
+    "reviewer": { "tier": "cloud", "model": "sonnet", "provider": "anthropic" },
+    "explore": { "tier": "local", "provider": "ollama" },
+    "research": { "tier": "cloud", "provider": "openai" }
+  }
+}

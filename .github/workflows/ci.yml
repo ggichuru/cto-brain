@@ -1,0 +1,33 @@
+# CTO gate: secret scan + 11 test suites. No deps to install (zero runtime deps).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Gate + test matrix
+        run: npm run ci
+
+      - name: Tarball scope (no secrets, no test/)
+        run: |
+          npm pack --dry-run 2>&1 | tee /tmp/pack.txt
+          grep -q 'total files:' /tmp/pack.txt
+          ! grep -E '(^|/)test/' /tmp/pack.txt
+          ! grep -E '\.cto-brain/' /tmp/pack.txt
