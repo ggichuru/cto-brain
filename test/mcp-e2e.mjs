@@ -1,6 +1,8 @@
 // End-to-end MCP transport test: spawns the real stdio server via the SDK
 // client, lists tools, and calls one over JSON-RPC. Covers server.mjs wiring
 // (Server + setRequestHandler + StdioServerTransport) that the unit test skips.
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -15,7 +17,13 @@ function ok(label, cond) {
 const here = path.dirname(fileURLToPath(import.meta.url));
 const binPath = path.join(here, "..", "bin", "cto-brain.mjs");
 
-const transport = new StdioClientTransport({ command: process.execPath, args: [binPath, "mcp"] });
+// Isolate telemetry to a temp home so the e2e run doesn't pollute the real one.
+const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "ctob-e2e-"));
+const transport = new StdioClientTransport({
+  command: process.execPath,
+  args: [binPath, "mcp"],
+  env: { ...process.env, CTO_BRAIN_HOME: tmpHome },
+});
 const client = new Client({ name: "cto-brain-e2e", version: "0" }, { capabilities: {} });
 
 try {
@@ -40,6 +48,7 @@ try {
   failures++;
 } finally {
   await client.close().catch(() => {});
+  fs.rmSync(tmpHome, { recursive: true, force: true });
 }
 
 if (failures) { console.error("\n" + failures + " MCP e2e failure(s)"); process.exit(1); }

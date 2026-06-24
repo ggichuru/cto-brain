@@ -7,6 +7,7 @@ import { writeWeeklyDigest } from "../src/cli/digest.mjs";
 import { gateCheck, packBrain, unpackBrain } from "../src/gate/pack.mjs";
 import { routerInit, routerList, routerPlan, routerProbe, routerSelect, stackStatus, TASK_KINDS } from "../src/cli/router.mjs";
 import { startStdioServer } from "../src/mcp/server.mjs";
+import { summarize as telemetrySummarize } from "../src/telemetry/recorder.mjs";
 import { systemBrainHome } from "../src/paths.mjs";
 
 const USAGE = `cto-brain — portable CTO orchestration brain
@@ -32,6 +33,7 @@ Usage:
   cto-brain router init [--force] [--system]
   cto-brain stack status
   cto-brain mcp
+  cto-brain telemetry summary
 `;
 
 function parseArgs(argv) {
@@ -304,6 +306,11 @@ async function main() {
       }
       case "mcp": {
         await startStdioServer();
+        break;
+      }
+      case "telemetry": {
+        if (sub !== "summary") throw new Error("Usage: cto-brain telemetry summary");
+        console.log(JSON.stringify(telemetrySummarize(), null, 2));
         break;
       }
       default:

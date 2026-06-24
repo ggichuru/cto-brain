@@ -81,7 +81,12 @@ cto-brain sync --promote
 | `router list\|probe\|select\|plan\|init` | Policy-first model + stack routing |
 | `stack status` | Probe configured stacks (Desk, Ollama, …) |
 | `mcp` | Run cto-brain as an MCP server (stdio) — see [docs/MCP.md](docs/MCP.md) |
+| `telemetry summary` | KPIs from local run telemetry (fallback rate, per-task providers, latency) |
 | `hook install` | Stop-hook script for post-turn project sync |
+
+Routing decisions and MCP tool calls are logged **locally only** to
+`~/.cto-brain/telemetry/runs.jsonl` (provider/model/latency — never secrets or
+URLs; nothing leaves your machine). Opt out with `CTO_BRAIN_NO_TELEMETRY=1`.
 
 ## Security & IP (hybrid model)
 
@@ -101,7 +106,7 @@ Add to `package.json` for auto-sync on install:
 
 ```json
 {
-  "devDependencies": { "cto-brain": "^0.1.1" },
+  "devDependencies": { "cto-brain": "^0.2.0" },
   "scripts": {
     "prepare": "cto-brain sync --project-only || true"
   }

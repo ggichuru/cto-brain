@@ -10,6 +10,7 @@ import { adapterStatus } from "../cli/adapters.mjs";
 import { roundClose } from "../cli/round-close.mjs";
 import { gateCheck } from "../gate/pack.mjs";
 import { systemBrainHome } from "../paths.mjs";
+import { recordEvent } from "../telemetry/recorder.mjs";
 
 const PREFER_ENUM = ["auto", "local", "cloud"];
 
@@ -112,9 +113,26 @@ export function listTools() {
 }
 
 // Dispatch a tool by name, returning its raw data. Throws on unknown tool.
-// Transport/formatting and (later) telemetry wrap around this.
+// Records best-effort telemetry around every call (transport-agnostic).
 export async function callTool(name, args = {}) {
   const tool = TOOL_INDEX.get(name);
   if (!tool) throw new Error(`unknown tool: ${name}`);
-  return await tool.handler(args || {});
+  const t0 = Date.now();
+  try {
+    const data = await tool.handler(args || {});
+    recordEvent({
+      kind: "mcp_tool",
+      source: name,
+      task: args && args.task,
+      provider: data && typeof data === "object" ? data.provider : undefined,
+      fallbackUsed: data && typeof data === "object" ? data.fallbackUsed : undefined,
+      honest: data && typeof data === "object" ? data.honest : undefined,
+      latencyMs: Date.now() - t0,
+      ok: true,
+    });
+    return data;
+  } catch (err) {
+    recordEvent({ kind: "mcp_tool", source: name, latencyMs: Date.now() - t0, ok: false });
+    throw err;
+  }
 }
