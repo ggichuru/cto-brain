@@ -22,11 +22,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mkulyma/cto-brain.git"
+    "url": "git+https://github.com/ggichuru/cto-brain.git"
   },
-  "homepage": "https://github.com/mkulyma/cto-brain#readme",
+  "homepage": "https://github.com/ggichuru/cto-brain#readme",
   "bugs": {
-    "url": "https://github.com/mkulyma/cto-brain/issues"
+    "url": "https://github.com/ggichuru/cto-brain/issues"
   },
   "publishConfig": {
     "access": "public",

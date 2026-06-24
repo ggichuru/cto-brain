@@ -17,7 +17,7 @@ Releases: push a semver tag `v*.*.*` → [`.github/workflows/release.yml`](.gith
 ## Setup
 
 ```bash
-git clone https://github.com/mkulyma/cto-brain.git
+git clone https://github.com/ggichuru/cto-brain.git
 cd cto-brain
 npm test
 npm link   # optional: global `cto-brain` CLI

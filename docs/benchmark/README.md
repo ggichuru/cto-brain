@@ -53,7 +53,7 @@ Where a tool ships on npm or PyPI, we read **`npm view`** / PyPI JSON (version,
 IDE-only tools have **N/A** for install size; we document how they work from official
 READMEs and product pages instead.
 
-**Last full pass:** 2026-06-24 (mkulyma workstation, Node 22).
+**Last full pass:** 2026-06-24 (ggichuru workstation, Node 22).
 
 ## Files in this folder
 

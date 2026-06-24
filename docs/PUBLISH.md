@@ -132,4 +132,4 @@ Manual publish without Actions: see token options above.
 ## Repository URL
 
 Set `repository`, `homepage`, and `bugs` in `package.json` before first publish if the
-GitHub remote differs from the default `github.com/mkulyma/cto-brain`.
+GitHub remote differs from the default `github.com/ggichuru/cto-brain`.

@@ -6,7 +6,7 @@ adapters, and hybrid public/encrypted skill packs.
 
 **License:** [MIT](./LICENSE) · **Node:** ≥ 20 · **npm:** [`cto-brain`](https://www.npmjs.com/package/cto-brain) (after publish)
 
-[![ci](https://github.com/mkulyma/cto-brain/actions/workflows/ci.yml/badge.svg)](https://github.com/mkulyma/cto-brain/actions/workflows/ci.yml)
+[![ci](https://github.com/ggichuru/cto-brain/actions/workflows/ci.yml/badge.svg)](https://github.com/ggichuru/cto-brain/actions/workflows/ci.yml)
 
 ## Quick start
 

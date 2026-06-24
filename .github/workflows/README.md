@@ -7,7 +7,7 @@
 
 **Setup (once):**
 
-1. Create `github.com/mkulyma/cto-brain` and push `main`.
+1. Create `github.com/ggichuru/cto-brain` and push `main`.
 2. Add secret `NPM_TOKEN` for automated npm publish on tags.
 3. First manual publish can use local token; tag-driven releases use Actions after that.
 

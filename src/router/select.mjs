@@ -6,10 +6,12 @@ import { getProvider, hasCloudCredential, resolveBaseUrl } from "./providers.mjs
 
 export const TASK_KINDS = [
   "dispatch-builder",
+  "autonomous-build",
   "explore",
   "reviewer-security",
   "reviewer-tech",
   "inline-edit",
+  "integrate",
   "research",
 ];
 
@@ -17,9 +19,15 @@ export const TASK_KINDS = [
 export const ROUTING_RULES = {
   "dispatch-builder": {
     preferTier: "local",
-    fallbackChain: ["ollama", "vllm", "llamacpp", "openai-compatible", "anthropic", "openai", "fugu"],
+    fallbackChain: ["ollama", "vllm", "llamacpp", "openai-compatible", "anthropic", "openai", "fugu", "cursor", "codex"],
     defaultModels: { ollama: "qwen2.5-coder:14b", vllm: "", anthropic: "claude-sonnet-4-20250514" },
     rationale: "Builders run token-heavy; local coders OK when probe succeeds.",
+  },
+  "autonomous-build": {
+    preferTier: "local",
+    fallbackChain: ["ollama", "vllm", "llamacpp", "openai-compatible", "anthropic", "openai", "fugu", "cursor", "codex"],
+    defaultModels: { ollama: "qwen2.5-coder:14b", anthropic: "claude-sonnet-4-20250514", openai: "gpt-4o" },
+    rationale: "Sustained agentic coding loops; local first, cloud when keys or IDE session available.",
   },
   explore: {
     preferTier: "local",
@@ -51,6 +59,12 @@ export const ROUTING_RULES = {
     defaultModels: { openai: "gpt-4o-mini", fugu: "fugu-ultra" },
     rationale: "External research: cloud preferred; local if keys absent.",
   },
+  integrate: {
+    preferTier: "cloud",
+    fallbackChain: ["anthropic", "openai", "fugu", "ollama", "vllm"],
+    defaultModels: { anthropic: "claude-sonnet-4-20250514" },
+    rationale: "Integration + merge decisions benefit from strong reasoning when cloud creds exist.",
+  },
 };
 
 export function selectRoute(opts = {}) {
@@ -74,14 +88,30 @@ export function selectRoute(opts = {}) {
   const probeById = Object.fromEntries(probes.filter((p) => p.reachable).map((p) => [p.id, p]));
   const env = opts.env || process.env;
 
-  const chain = buildChain(rule, prefer, taskOverride);
+  const chain = buildChain(rule, prefer, taskOverride, opts.config);
+
+  const recordStub = opts.config?.agentic?.recordStubProviders !== false;
 
   for (const providerId of chain) {
     const preset = getProvider(providerId);
     if (!preset) continue;
 
     if (preset.stub) {
-      if (providerId === "cursor" || providerId === "codex") continue;
+      if (recordStub && (providerId === "cursor" || providerId === "codex")) {
+        return {
+          provider: providerId,
+          model: preset.defaultModel,
+          baseUrl: null,
+          tier: preset.tier,
+          task,
+          prefer,
+          mode: "ide-bound",
+          reason: `${preset.stubReason} Enabled in router.json; embed intent in brief — dispatch via IDE/CLI.`,
+          honest: true,
+          fallbackUsed: true,
+        };
+      }
+      continue;
     }
 
     const probed = probeById[providerId];
@@ -117,8 +147,12 @@ export function selectRoute(opts = {}) {
   };
 }
 
-function buildChain(rule, prefer, taskOverride) {
+function buildChain(rule, prefer, taskOverride, config) {
   let chain = [...rule.fallbackChain];
+  const enabled = config?.enabledProviders;
+  if (enabled?.length) {
+    chain = chain.filter((id) => enabled.includes(id));
+  }
   if (taskOverride?.provider) {
     chain = [taskOverride.provider, ...chain.filter((id) => id !== taskOverride.provider)];
   }
@@ -150,9 +184,14 @@ function getTaskOverride(config, task) {
   if (!config?.routing) return null;
   const r = config.routing;
   if (task === "dispatch-builder" && r.builder) return r.builder;
+  if (task === "autonomous-build" && (r["autonomous-build"] || r.autonomous)) {
+    return r["autonomous-build"] || r.autonomous;
+  }
   if (task.startsWith("reviewer-") && r.reviewer) return r.reviewer;
   if (task === "explore" && r.explore) return r.explore;
   if (task === "research" && r.research) return r.research;
+  if (task === "integrate" && r.integrate) return r.integrate;
+  if (task === "inline-edit" && r["inline-edit"]) return r["inline-edit"];
   if (r[task]) return r[task];
   return null;
 }

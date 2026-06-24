@@ -1,7 +1,7 @@
 # {{projectName}} — CTO charter
 
 **Subordinate identity:** {{ctoId}}
-**Lead-CTO:** mkulyma
+**Lead-CTO:** ggichuru
 **Charter effective:** {{date}}
 **Charter version:** v0.1
 

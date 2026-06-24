@@ -372,7 +372,7 @@ Template:
 # <project> — CTO charter
 
 **Subordinate identity:** <project>-cto
-**Lead-CTO:** mkulyma (or the named human at the lead seat)
+**Lead-CTO:** ggichuru (or the named human at the lead seat)
 **Charter effective:** YYYY-MM-DD
 **Charter version:** v0.1
 
