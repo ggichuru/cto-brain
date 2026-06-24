@@ -1,0 +1,8 @@
+node_modules/
+*.tar.gz
+*.tgz
+cto-brain-*.tgz
+*.enc
+.DS_Store
+.auto-sync.log
+.cto-brain/

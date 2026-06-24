@@ -1,0 +1,13 @@
+# Never publish (belt-and-suspenders; package.json "files" is primary allowlist)
+test/
+scripts/
+.cto-brain/
+.git/
+.github/
+*.tar.gz
+*.tgz
+.env
+.env.*
+credentials.json
+.DS_Store
+.auto-sync.log

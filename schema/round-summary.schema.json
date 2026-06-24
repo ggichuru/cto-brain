@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Round close structured summary",
+  "type": "object",
+  "required": ["tag", "summary"],
+  "properties": {
+    "date": { "type": "string", "format": "date" },
+    "tag": { "type": "string" },
+    "summary": { "type": "string" },
+    "lesson": { "type": "string" },
+    "feedbackTopic": { "type": "string" },
+    "modifiedFiles": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "validation": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# Never pack, sync, or share these paths
+credentials.json
+.credentials.json
+history.jsonl
+.env
+.env.local
+*.pem
+id_rsa
+secrets/
