@@ -80,6 +80,7 @@ cto-brain sync --promote
 | `preflight dispatch\|commit` | Pre-flight checklists |
 | `router list\|probe\|select\|plan\|init` | Policy-first model + stack routing |
 | `stack status` | Probe configured stacks (Desk, Ollama, …) |
+| `mcp` | Run cto-brain as an MCP server (stdio) — see [docs/MCP.md](docs/MCP.md) |
 | `hook install` | Stop-hook script for post-turn project sync |
 
 ## Security & IP (hybrid model)

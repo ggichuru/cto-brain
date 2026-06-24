@@ -6,6 +6,7 @@ import { roundClose, deployCto } from "../src/cli/round-close.mjs";
 import { writeWeeklyDigest } from "../src/cli/digest.mjs";
 import { gateCheck, packBrain, unpackBrain } from "../src/gate/pack.mjs";
 import { routerInit, routerList, routerPlan, routerProbe, routerSelect, stackStatus, TASK_KINDS } from "../src/cli/router.mjs";
+import { startStdioServer } from "../src/mcp/server.mjs";
 import { systemBrainHome } from "../src/paths.mjs";
 
 const USAGE = `cto-brain — portable CTO orchestration brain
@@ -30,6 +31,7 @@ Usage:
   cto-brain router plan [--prefer local|cloud|auto]
   cto-brain router init [--force] [--system]
   cto-brain stack status
+  cto-brain mcp
 `;
 
 function parseArgs(argv) {
@@ -299,6 +301,10 @@ async function main() {
           break;
         }
         throw new Error("Usage: cto-brain stack status");
+      }
+      case "mcp": {
+        await startStdioServer();
+        break;
       }
       default:
         console.log(USAGE);
