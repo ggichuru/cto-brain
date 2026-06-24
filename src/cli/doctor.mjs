@@ -4,7 +4,9 @@ import { spawnSync } from "node:child_process";
 import { ensureDir, exists, packageRoot, systemBrainHome } from "../paths.mjs";
 import { scanForCredentials } from "../sync/non-destructive.mjs";
 import { systemLayout } from "../sync/brain-sync.mjs";
-import { detectInstalledAdapters, wireSkills } from "../adapters/index.mjs";
+import { adapterHasCoreSkills, detectInstalledAdapters } from "../adapters/index.mjs";
+import { adapterStatus, wireSkills } from "./adapters.mjs";
+import { loadAdapterSettings } from "../adapters/settings.mjs";
 import { bundledSkillsDir, listSkillNames } from "../paths.mjs";
 
 export function runDoctor(opts = {}) {
@@ -33,10 +35,37 @@ export function runDoctor(opts = {}) {
   if (rsync.status === 0) ok.push("rsync available (non-destructive sync)");
   else issues.push({ level: "warn", msg: "rsync not found — using mtime-wins copy fallback" });
 
-  const adapters = detectInstalledAdapters();
+  const adapterPrefs = loadAdapterSettings(home);
+  ok.push(`enabled adapters: ${adapterPrefs.enabled.join(", ")} (scope=${adapterPrefs.scope})`);
+
+  const status = adapterStatus({ home, cwd: opts.cwd || process.cwd() });
+  let anyCoreWired = false;
+  for (const a of status.adapters) {
+    for (const p of a.paths) {
+      if (!p.exists) {
+        if (strict) {
+          issues.push({ level: "warn", msg: `adapter ${a.id}: missing dir ${p.path}` });
+        }
+        continue;
+      }
+      if (adapterHasCoreSkills(p.path)) {
+        ok.push(`adapter ${a.id}: core skills wired at ${p.path} (${p.skillCount} skills)`);
+        anyCoreWired = true;
+      } else if (strict) {
+        issues.push({
+          level: "error",
+          msg: `adapter ${a.id}: ${p.path} missing cto-orchestration or meta-brain — run: cto-brain adapter wire`,
+        });
+      }
+    }
+  }
+
+  const adapters = detectInstalledAdapters(opts.cwd, adapterPrefs.scope);
   const wired = adapters.filter((a) => a.dirs.length);
   if (wired.length) ok.push(`adapters with skill dirs: ${wired.map((a) => a.id).join(", ")}`);
-  else issues.push({ level: "warn", msg: "no adapter skill dirs found — run: cto-brain adapter wire" });
+  else if (!anyCoreWired) {
+    issues.push({ level: strict ? "error" : "warn", msg: "no adapter skill dirs found — run: cto-brain adapter wire" });
+  }
 
   if (!exists(layout.growthLedger)) {
     issues.push({ level: "warn", msg: "growth_ledger.md missing — run: cto-brain init" });
@@ -45,14 +74,17 @@ export function runDoctor(opts = {}) {
   const errors = issues.filter((i) => i.level === "error");
   const healthy = strict ? errors.length === 0 : errors.length === 0;
 
-  return { healthy, ok, issues, home, bundled, installed, adapters: wired };
+  return { healthy, ok, issues, home, bundled, installed, adapters: wired, adapterStatus: status };
 }
 
 export function installToAgents(opts = {}) {
   return wireSkills({
     brainHome: opts.systemHome || systemBrainHome(),
-    adapters: opts.adapters || ["claude-code", "cursor", "codex"],
+    adapters: opts.adapters,
     cwd: opts.cwd,
+    scope: opts.scope,
+    project: opts.project,
+    global: opts.global,
     syncMemory: opts.syncMemory !== false,
     withRules: opts.withRules !== false,
   });

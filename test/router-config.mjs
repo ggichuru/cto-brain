@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   initRouterConfig,
+  initSystemRouterConfig,
   loadRouterConfig,
   mergeRouterConfig,
   DEFAULT_ROUTER_CONFIG,
@@ -30,7 +31,7 @@ ok("router.json exists", fs.existsSync(init.path));
 const loaded = loadRouterConfig(tmp);
 ok("load finds file", loaded.exists === true);
 ok("load has stacks", Array.isArray(loaded.config.stacks) && loaded.config.stacks.length >= 2);
-ok("load defaultPrefer local", loaded.config.routing.defaultPrefer === "local");
+ok("load defaultPrefer auto", loaded.config.routing.defaultPrefer === "auto");
 
 const merged = mergeRouterConfig(DEFAULT_ROUTER_CONFIG, {
   routing: { defaultPrefer: "cloud" },
@@ -40,6 +41,11 @@ ok("merge keeps stacks", merged.stacks.length === DEFAULT_ROUTER_CONFIG.stacks.l
 
 const second = initRouterConfig({ cwd: tmp });
 ok("init without force skips", second.created === false);
+
+const sysHome = path.join(tmp, "system-home");
+const sysInit = initSystemRouterConfig({ home: sysHome });
+ok("system init creates router.json", sysInit.created === true && sysInit.scope === "system");
+ok("system router.json exists", fs.existsSync(path.join(sysHome, "router.json")));
 
 fs.rmSync(tmp, { recursive: true, force: true });
 

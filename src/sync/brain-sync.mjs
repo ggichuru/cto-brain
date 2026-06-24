@@ -10,7 +10,7 @@ import {
   templatesDir,
 } from "../paths.mjs";
 import { copyFileIfNewer, scanForCredentials, syncDir } from "./non-destructive.mjs";
-import { initRouterConfig } from "../router/config.mjs";
+import { initRouterConfig, initSystemRouterConfig } from "../router/config.mjs";
 
 export function systemLayout(home = systemBrainHome()) {
   return {
@@ -120,6 +120,8 @@ export function initSystemBrain(home = systemBrainHome()) {
       "utf8"
     );
   }
+
+  initSystemRouterConfig({ home });
 
   return layout;
 }

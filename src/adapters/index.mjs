@@ -13,38 +13,68 @@ import { syncDir } from "../sync/non-destructive.mjs";
  * @property {(cwd?: string) => string | null} [rulesFile]
  */
 
+function scopeDirs({ globalDirs, projectDirs, scope = "both" }) {
+  if (scope === "global") return globalDirs;
+  if (scope === "project") return projectDirs;
+  return [...projectDirs, ...globalDirs];
+}
+
 export const adapters = /** @type {BrainAdapter[]} */ ([
   {
     id: "claude-code",
     label: "Claude Code",
-    skillDirs: () => {
+    skillDirs: (cwd = process.cwd(), opts = {}) => {
+      const scope = opts.scope || "both";
       const home = process.env.CLAUDE_HOME || path.join(process.env.HOME || "", ".claude");
-      return [path.join(home, "skills")];
+      return scopeDirs({
+        scope,
+        globalDirs: [path.join(home, "skills")],
+        projectDirs: [path.join(cwd, ".claude", "skills")],
+      });
     },
   },
   {
     id: "cursor",
     label: "Cursor",
-    skillDirs: (cwd = process.cwd()) => [
-      path.join(cwd, ".cursor", "skills"),
-      path.join(process.env.HOME || "", ".cursor", "skills"),
-    ],
+    skillDirs: (cwd = process.cwd(), opts = {}) => {
+      const scope = opts.scope || "both";
+      return scopeDirs({
+        scope,
+        globalDirs: [path.join(process.env.HOME || "", ".cursor", "skills")],
+        projectDirs: [path.join(cwd, ".cursor", "skills")],
+      });
+    },
     rulesFile: (cwd = process.cwd()) => path.join(cwd, ".cursor", "rules", "cto-brain.mdc"),
   },
   {
     id: "codex",
     label: "Codex / OpenAI agents",
-    skillDirs: () => [path.join(process.env.HOME || "", ".agents", "skills")],
+    skillDirs: (_cwd = process.cwd(), opts = {}) => {
+      const scope = opts.scope || "both";
+      const global = path.join(process.env.HOME || "", ".agents", "skills");
+      if (scope === "project") return [];
+      return [global];
+    },
   },
   {
     id: "opencode",
     label: "OpenCode",
-    skillDirs: () => [path.join(process.env.HOME || "", ".config", "opencode", "skills")],
+    skillDirs: (_cwd = process.cwd(), opts = {}) => {
+      const scope = opts.scope || "both";
+      const global = path.join(process.env.HOME || "", ".config", "opencode", "skills");
+      if (scope === "project") return [];
+      return [global];
+    },
   },
   {
     id: "generic",
     label: "Generic (project .agents/skills)",
-    skillDirs: (cwd = process.cwd()) => [path.join(cwd, ".agents", "skills")],
+    skillDirs: (cwd = process.cwd(), opts = {}) => {
+      const scope = opts.scope || "both";
+      const project = path.join(cwd, ".agents", "skills");
+      if (scope === "global") return [];
+      return [project];
+    },
   },
 ]);
 
@@ -62,11 +92,12 @@ export function wireSkills(opts = {}) {
   }
 
   const ids = opts.adapters || ["claude-code", "cursor"];
+  const scope = opts.scope || "both";
   const wired = [];
 
   for (const id of ids) {
     const adapter = getAdapter(id);
-    for (const destRoot of adapter.skillDirs(opts.cwd)) {
+    for (const destRoot of adapter.skillDirs(opts.cwd, { scope })) {
       ensureDir(destRoot);
       const r = syncDir(skillsSrc, destRoot);
       wired.push({ adapter: id, dest: destRoot, ...r });
@@ -106,10 +137,16 @@ When holding the CTO seat or routing ambiguous engineering intent, load skills f
   return { skills: listSkillNames(skillsSrc), wired };
 }
 
-export function detectInstalledAdapters() {
+export function detectInstalledAdapters(cwd = process.cwd(), scope = "both") {
   return adapters.map((a) => ({
     id: a.id,
     label: a.label,
-    dirs: a.skillDirs().filter((d) => exists(d)),
+    dirs: a.skillDirs(cwd, { scope }).filter((d) => exists(d)),
   }));
+}
+
+export function adapterHasCoreSkills(dir) {
+  return ["cto-orchestration", "meta-brain"].every(
+    (name) => exists(path.join(dir, name, "SKILL.md"))
+  );
 }

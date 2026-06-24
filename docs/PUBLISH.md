@@ -119,6 +119,13 @@ git push origin main --tags
 GitHub Actions **release** workflow publishes on `v*.*.*` tags when `NPM_TOKEN` is set
 (see below). Or publish manually from your machine.
 
+### Push to GitHub (one-liner)
+
+```bash
+git remote add origin https://github.com/ggichuru/cto-brain.git 2>/dev/null || true
+git push -u origin main && git push origin --tags
+```
+
 ### GitHub secret for CI publish
 
 Repo → **Settings → Secrets and variables → Actions** → New repository secret:

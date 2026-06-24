@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 import { initProjectBrain, initSystemBrain, pullPackageToSystem, syncSystemProject } from "../src/sync/brain-sync.mjs";
 import { runDoctor, installToAgents, writeHookInstall } from "../src/cli/doctor.mjs";
-import { adapters, wireSkills } from "../src/adapters/index.mjs";
+import { adapterList, adapterPick, adapterStatus, formatAdapterListTable, wireSkills } from "../src/cli/adapters.mjs";
 import { roundClose, deployCto } from "../src/cli/round-close.mjs";
 import { writeWeeklyDigest } from "../src/cli/digest.mjs";
 import { gateCheck, packBrain, unpackBrain } from "../src/gate/pack.mjs";
-import { routerInit, routerList, routerProbe, routerSelect, stackStatus, TASK_KINDS } from "../src/cli/router.mjs";
+import { routerInit, routerList, routerPlan, routerProbe, routerSelect, stackStatus, TASK_KINDS } from "../src/cli/router.mjs";
 import { systemBrainHome } from "../src/paths.mjs";
 
 const USAGE = `cto-brain — portable CTO orchestration brain
 
 Usage:
   cto-brain init [--project] [--name <project>]
-  cto-brain sync [--pull|--promote|--project-only]
-  cto-brain install [--adapters claude-code,cursor,codex]
+  cto-brain sync [--pull|--promote|--project-only] [--wire]
+  cto-brain install [--adapters claude-code,cursor,codex] [--project|--global]
   cto-brain doctor [--strict]
-  cto-brain adapter list|wire [--adapters ...] [--no-rules]
+  cto-brain adapter list|pick|wire|status [--adapters ...] [--project|--global] [--no-rules]
   cto-brain round-close --tag <tag> --summary <text> [--lesson <text>] [--feedback <topic>]
   cto-brain deploy-cto [--name <project>]
   cto-brain digest [--week YYYY-Www] [--force]
@@ -27,7 +27,8 @@ Usage:
   cto-brain router list
   cto-brain router probe [--all]
   cto-brain router select --task <kind> [--prefer local|cloud|auto]
-  cto-brain router init [--force]
+  cto-brain router plan [--prefer local|cloud|auto]
+  cto-brain router init [--force] [--system]
   cto-brain stack status
 `;
 
@@ -36,15 +37,19 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--project") args.project = true;
+    else if (a === "--global") args.global = true;
     else if (a === "--pull") args.pull = true;
     else if (a === "--promote") args.promote = true;
     else if (a === "--project-only") args.projectOnly = true;
+    else if (a === "--wire") args.wire = true;
     else if (a === "--strict") args.strict = true;
+    else if (a === "--list") args.list = true;
     else if (a === "--encrypt") args.encrypt = true;
     else if (a === "--decrypt") args.decrypt = true;
     else if (a === "--no-rules") args.noRules = true;
     else if (a === "--force") args.force = true;
     else if (a === "--all") args.all = true;
+    else if (a === "--system") args.system = true;
     else if (a.startsWith("--")) {
       const key = a.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
       args[key] = argv[++i];
@@ -104,17 +109,32 @@ async function main() {
           projectOnly: args.projectOnly,
         });
         console.log(`Sync (${r.direction}):`, JSON.stringify(r.results, null, 2));
+        if (args.wire) {
+          const w = wireSkills({
+            cwd: process.cwd(),
+            project: args.project,
+            global: args.global,
+            withRules: !args.noRules,
+          });
+          console.log(`Wired ${w.skills.length} skills to: ${w.enabled.join(", ")} (scope=${w.scope})`);
+        }
         break;
       }
       case "install": {
-        const ids = args.adapters ? args.adapters.split(",") : undefined;
-        const r = installToAgents({ adapters: ids, cwd: process.cwd() });
+        const ids = args.adapters ? args.adapters.split(",") : ["claude-code", "cursor", "codex"];
+        const r = installToAgents({
+          adapters: ids,
+          cwd: process.cwd(),
+          project: args.project,
+          global: args.global,
+          withRules: !args.noRules,
+        });
         console.log(`Wired ${r.skills.length} skills:`, r.skills.join(", "));
-        console.log(JSON.stringify(r.wired, null, 2));
+        console.log(`Adapters: ${r.enabled.join(", ")} (scope=${r.scope})`);
         break;
       }
       case "doctor": {
-        const r = runDoctor({ strict: args.strict });
+        const r = runDoctor({ strict: args.strict, cwd: process.cwd() });
         for (const line of r.ok) console.log("OK:", line);
         for (const i of r.issues) console.log(i.level.toUpperCase() + ":", i.msg);
         if (!r.healthy) process.exit(1);
@@ -122,18 +142,50 @@ async function main() {
       }
       case "adapter": {
         if (sub === "list") {
-          for (const a of adapters) {
-            console.log(`${a.id}\t${a.label}\t${a.skillDirs().join(", ")}`);
+          const rows = adapterList({
+            cwd: process.cwd(),
+            project: args.project,
+            global: args.global,
+          });
+          console.log(formatAdapterListTable(rows));
+          break;
+        }
+        if (sub === "pick") {
+          const r = await adapterPick({
+            adapters: args.adapters,
+            scope: args.scope,
+            list: args.list,
+          });
+          if (r.listed) {
+            for (const a of r.adapters) {
+              console.log(`${a.index}. ${a.id} — ${a.label}`);
+            }
+          } else {
+            console.log(`Saved adapters: ${r.enabled.join(", ")} (scope=${r.scope})`);
+            console.log(r.settingsPath);
           }
           break;
         }
         if (sub === "wire") {
-          const ids = args.adapters ? args.adapters.split(",") : ["claude-code", "cursor", "codex"];
-          const r = wireSkills({ adapters: ids, cwd: process.cwd(), withRules: !args.noRules, syncMemory: true });
+          const ids = args.adapters ? args.adapters.split(",") : undefined;
+          const r = wireSkills({
+            adapters: ids,
+            cwd: process.cwd(),
+            project: args.project,
+            global: args.global,
+            withRules: !args.noRules,
+            syncMemory: true,
+          });
           console.log("Wired skills:", r.skills.join(", "));
+          console.log(`Adapters: ${r.enabled.join(", ")} (scope=${r.scope})`);
           break;
         }
-        throw new Error("Usage: cto-brain adapter list|wire");
+        if (sub === "status") {
+          const r = adapterStatus({ cwd: process.cwd(), adapters: args.adapters });
+          console.log(JSON.stringify(r, null, 2));
+          break;
+        }
+        throw new Error("Usage: cto-brain adapter list|pick|wire|status");
       }
       case "round-close": {
         const r = roundClose({
@@ -221,11 +273,24 @@ async function main() {
           break;
         }
         if (sub === "init") {
-          const r = routerInit({ cwd: process.cwd(), force: args.force });
+          const r = routerInit({
+            cwd: process.cwd(),
+            force: args.force,
+            system: !!args.system,
+            home: args.system ? systemBrainHome() : undefined,
+          });
           console.log(JSON.stringify(r, null, 2));
           break;
         }
-        throw new Error("Usage: cto-brain router list|probe|select|init");
+        if (sub === "plan") {
+          const r = await routerPlan({
+            cwd: process.cwd(),
+            prefer: args.prefer,
+          });
+          console.log(JSON.stringify(r, null, 2));
+          break;
+        }
+        throw new Error("Usage: cto-brain router list|probe|select|plan|init");
       }
       case "stack": {
         if (sub === "status") {

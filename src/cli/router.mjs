@@ -57,9 +57,8 @@ export async function routerPlan(opts = {}) {
 }
 
 export function routerInit(opts = {}) {
-  if (opts.system) {
-    const { initSystemRouterConfig } = require hack - use import
-  }
+  if (opts.system) return initSystemRouterConfig(opts);
+  return initRouterConfig(opts);
 }
 
 export async function stackStatus(opts = {}) {

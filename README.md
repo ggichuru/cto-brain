@@ -38,8 +38,9 @@ Bundled core skills:
 
 | Doc | Description |
 |-----|-------------|
+| **[docs/USAGE.md](docs/USAGE.md)** | **How to build software with cto-brain (start here)** |
 | [docs/README.md](docs/README.md) | Documentation index |
-| [docs/MODEL-ROUTER.md](docs/MODEL-ROUTER.md) | Policy-first model + stack routing |
+| [docs/MODEL-ROUTER.md](docs/MODEL-ROUTER.md) | Policy-first model + stack routing (two-level merge) |
 | [docs/ENCRYPTED-PACKS.md](docs/ENCRYPTED-PACKS.md) | Public / signed / encrypted skill tiers |
 | [docs/benchmark/](docs/benchmark/README.md) | vs 14 peers — methodology + scorecard |
 | [docs/PUBLISH.md](docs/PUBLISH.md) | npm publish + 2FA gate |
@@ -77,7 +78,7 @@ cto-brain sync --promote
 | `gate check` | Scan for credential leaks before pack/share |
 | `pack` / `unpack` | Signed or encrypted skill packs |
 | `preflight dispatch\|commit` | Pre-flight checklists |
-| `router list\|probe\|select\|init` | Policy-first model + stack routing |
+| `router list\|probe\|select\|plan\|init` | Policy-first model + stack routing |
 | `stack status` | Probe configured stacks (Desk, Ollama, …) |
 | `hook install` | Stop-hook script for post-turn project sync |
 
@@ -99,7 +100,7 @@ Add to `package.json` for auto-sync on install:
 
 ```json
 {
-  "devDependencies": { "cto-brain": "^0.1.0" },
+  "devDependencies": { "cto-brain": "^0.1.1" },
   "scripts": {
     "prepare": "cto-brain sync --project-only || true"
   }
@@ -124,13 +125,15 @@ Fugu and Fable tools optimize **which model runs**. CTO Brain optimizes **how hu
 Pick local vs cloud runtime per task kind with auditable rules (not black-box routing):
 
 ```bash
-cto-brain router init
+cto-brain router init --system   # ~/.cto-brain/router.json
+cto-brain router init            # .cto-brain/router.json
 cto-brain router probe
+cto-brain router plan            # full task matrix for CI / dispatch
 cto-brain router select --task dispatch-builder --prefer local
 cto-brain stack status
 ```
 
-See [docs/MODEL-ROUTER.md](docs/MODEL-ROUTER.md) and `skills/cto-orchestration/references/model-router.md`.
+See [docs/USAGE.md](docs/USAGE.md) and [docs/MODEL-ROUTER.md](docs/MODEL-ROUTER.md).
 
 ## Benchmark vs 14 peers
 

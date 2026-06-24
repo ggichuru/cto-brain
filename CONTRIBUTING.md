@@ -9,8 +9,11 @@ By contributing, you agree your contributions are licensed under the [MIT Licens
 Every push/PR to `main` runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
 
 ```bash
-npm run ci    # gate check + 11 test suites
+npm run ci    # gate check + test suites
 ```
+
+**Branch protection:** enable **Require status checks to pass** and select the **ci** workflow
+(or job **gate**) so merges to `main` cannot land with a failing gate or test matrix.
 
 Releases: push a semver tag `v*.*.*` → [`.github/workflows/release.yml`](.github/workflows/release.yml) publishes to npm (needs `NPM_TOKEN` secret). See [docs/PUBLISH.md](docs/PUBLISH.md).
 
@@ -34,7 +37,7 @@ npm test
 cto-brain gate check --home .
 ```
 
-Eleven suites cover skills frontmatter, sync idempotency, secret gate, CLI init, and router
+Eleven suites cover skills frontmatter, sync idempotency, secret gate, CLI init, adapters, and router
 behavior. Do not skip hooks for merges to `main`.
 
 ## Change guidelines

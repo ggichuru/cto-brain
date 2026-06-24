@@ -97,7 +97,7 @@ export function selectRoute(opts = {}) {
     if (!preset) continue;
 
     if (preset.stub) {
-      if (recordStub && (providerId === "cursor" || providerId === "codex")) {
+      if (recordStub && (providerId === "cursor" || providerId === "codex") && prefer !== "local") {
         return {
           provider: providerId,
           model: preset.defaultModel,

@@ -21,6 +21,44 @@ If you find a security issue in **cto-brain** (CLI, sync, pack/unpack, gate):
 - **Encrypted packs** use AES-256-CBC; passphrase is never stored by cto-brain.
 - **Sync is non-destructive** (`rsync -au`, no `--delete`) to avoid clobbering local brain data.
 
+## Gate check (`cto-brain gate check`)
+
+Run before pack, publish, or sharing brain tarballs. CI runs this via `npm run ci`.
+
+**Credential path patterns** (always blocked):
+
+| Pattern | Example |
+|---------|---------|
+| `credentials.json` | API credential store |
+| `.credentials.json` | Hidden credential store |
+| `history.jsonl` | Shell history export |
+| `.env.local` | Local env overrides |
+| `id_rsa` | SSH private key |
+| `*.pem` | TLS / key material |
+
+**Skill body scan:** `SKILL.md` files under `skills/` are checked for inline secrets
+(`sk-…` OpenAI-style keys, `AKIA…` AWS access keys).
+
+**Exit:** JSON with `"ok": true` when clean; non-zero exit and `"problems"` array when not.
+
+## `.cto-brainignore`
+
+Project or system brain roots can list extra paths to exclude from sync and pack
+(one pattern per line, `#` comments allowed). Defaults in repo root:
+
+```
+credentials.json
+.credentials.json
+history.jsonl
+.env
+.env.local
+*.pem
+id_rsa
+secrets/
+```
+
+Sync also skips built-in excludes: `node_modules/`, `.git/`, `*-workspace/`, `*.skill`.
+
 ## Operator responsibilities
 
 - Do not commit `.env`, `credentials.json`, or API keys into `.cto-brain/`.

@@ -39,6 +39,7 @@ ok("init --project exits 0", initProj.status === 0);
 ok("project .cto-brain exists", fs.existsSync(path.join(tmpProj, ".cto-brain")));
 ok("CHARTER.md created", fs.existsSync(path.join(tmpProj, "CHARTER.md")));
 ok("router.json created on init --project", fs.existsSync(path.join(tmpProj, ".cto-brain", "router.json")));
+ok("system router.json on init", fs.existsSync(path.join(env.CTO_BRAIN_HOME, "router.json")));
 ok("system skills dir", fs.existsSync(path.join(env.CTO_BRAIN_HOME, "skills", "cto-orchestration")));
 
 const doctor = spawnSync(process.execPath, [bin, "doctor"], { env, encoding: "utf8" });
