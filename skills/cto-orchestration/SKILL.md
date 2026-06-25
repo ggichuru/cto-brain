@@ -135,6 +135,27 @@ start here.
   it.
 - Carve themes that map cleanly to non-overlapping file scopes.
 
+#### Grill before you decompose (the 2-minute alignment loop)
+
+"No-one knows exactly what they want." Before you write a single brief,
+**grill the human to surface scope** — the asked ask is rarely the whole
+ask. Get explicit answers to the load-bearing questions:
+
+- **Deploy** — where does this run in production? (Vercel / Docker / a host?)
+- **Distribution** — does anything get published? (npm / a registry / a tag?)
+- **Proof bar** — what counts as "tested"? (unit / e2e / recorded demo /
+  reviewer trio?)
+- **Docs/media** — tutorial, screenshots, video: required or nice-to-have?
+- **Design bar** — functional-first, or branded/polished UI?
+- **Positioning** — does it need to be proven against alternatives?
+
+Decompose only after these are answered. The signal you under-grilled:
+**3+ mid-flight scope additions in one build.** One new requirement
+mid-flight is a normal supplement; three or more means you should have
+grilled harder up front. (Lesson from the pulse build; convergent with
+`mattpocock/skills` `/grill`, which makes this a first-class skill.) The
+grill is the front-end mirror of the close-out report at the back end.
+
 ### 2. Dispatch
 
 Parallel agent calls in one message. Department heads when ≥4 builders
@@ -934,6 +955,11 @@ memory feedback entry.
 
 Files that exist specifically to be read by future agents:
 
+- `CONTEXT.md` — the project's **shared vocabulary**: the domain terms,
+  the load-bearing nouns, and links to the ADRs that define them. One word
+  the team and the agents agree on ("the materialization cascade") replaces
+  a 20-word re-explanation every round — it cuts tokens and speeds
+  navigation. Adopted from `mattpocock/skills`; see `templates/CONTEXT.md`.
 - `docs/story.md` — design conviction stack (origin + naming)
 - `docs/whitepaper-*.md` — load-bearing design (current + historical)
 - `docs/user-journeys.md` — operator levels

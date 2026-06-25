@@ -190,6 +190,28 @@ When 2+ skills could fire, use this precedence:
 
 ---
 
+## Skill invocation classes (composition contract)
+
+Borrowed from `mattpocock/skills` and adopted here: every skill is one of
+two classes, and the class governs how it may be composed.
+
+- **User-invoked** — orchestrate a workflow; reached by the human via a
+  slash command or named request. Examples: `cto-orchestration`,
+  `project-impact-scribe`, the document-creation skills.
+- **Model-invoked** — hold a reusable discipline the agent fires on its own
+  mid-task. Examples: `agentic-learning-loop` (the Role-9 ritual),
+  `multi-agent-execution`, `human-voice-writing`.
+
+**The composition rule:** a user-invoked skill MAY call model-invoked
+skills, but a user-invoked skill must **never** call another user-invoked
+skill. (cto-orchestration loading `human-voice-writing` is fine;
+cto-orchestration "calling" project-impact-scribe is not — it *routes* to
+it via Role 9, a hand-off, not a nested call.) This keeps orchestration
+flat and auditable: one workflow owner per round, disciplines layered
+underneath. When you add a skill (see "How to extend"), declare its class.
+
+---
+
 ## What this skill enables
 
 - **Cold-start routing.** A fresh session with a vague intent
