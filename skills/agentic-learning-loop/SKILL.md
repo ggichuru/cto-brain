@@ -320,6 +320,27 @@ loop is working. If no, the propagation step is broken.
 - `project-impact-scribe` — monthly reflection layer.
 - `schedule` — automates the maintenance cadence.
 
+### IC disciplines (model-invoked, fired inside a round)
+
+These are **policy modules at the inner-loop scale** — the agent fires them
+mid-task while executing, and their outputs feed the loop's reward signal
+(a clean `tdd` cycle, a confirmed `diagnosing-bugs` root cause, and an
+upfront `grill` all reduce the rework that shows up as negative reward).
+Credited to `mattpocock/skills`.
+
+- `grill` — surfaces real scope before a round starts (front end of Role 1).
+  Under-grilling shows up later as mid-flight scope churn → negative reward.
+- `tdd` — the fast feedback loop; a failing-then-passing test is the
+  cheapest local reward signal there is.
+- `diagnosing-bugs` — turns a failure into a confirmed cause + regression
+  test (a captured lesson, not a guess).
+- `domain-modeling` — maintains `CONTEXT.md`, the project-local shared
+  vocabulary that lowers the token cost of every future round.
+
+When you add such a discipline, classify it **model-invoked** (see
+`meta-brain` → Skill invocation classes) and list it here so the loop
+accounts for it.
+
 ---
 
 ## What this skill enables

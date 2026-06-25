@@ -152,8 +152,9 @@ ask. Get explicit answers to the load-bearing questions:
 Decompose only after these are answered. The signal you under-grilled:
 **3+ mid-flight scope additions in one build.** One new requirement
 mid-flight is a normal supplement; three or more means you should have
-grilled harder up front. (Lesson from the pulse build; convergent with
-`mattpocock/skills` `/grill`, which makes this a first-class skill.) The
+grilled harder up front. (Lesson from the pulse build.) For the full
+interview loop, **load the bundled `grill` skill** — the first-class,
+model-invocable version of this step (credited to `mattpocock/skills`). The
 grill is the front-end mirror of the close-out report at the back end.
 
 ### 2. Dispatch
@@ -1044,6 +1045,10 @@ The CTO knows the tool catalog. Reaching for the wrong one wastes
 | Recurring task on cron | `schedule` skill | Background ops |
 | Polling external state | `loop` skill | When harness can't auto-notify |
 | Pick model / runtime per task | `cto-brain router` CLI | Pre-dispatch probe + `router select --task <kind>` — see [references/model-router.md](references/model-router.md) |
+| Align on real scope before building | `grill` skill | Vague/broad ask; before Role 1 decompose; the front end of the round |
+| Name the domain / shared vocabulary | `domain-modeling` skill | Start of a build, or a concept keeps getting re-explained → write `CONTEXT.md` |
+| Write/change logic with a right answer | `tdd` skill | In a builder brief's done-criteria; every bug fix's regression test |
+| Debug something broken | `diagnosing-bugs` skill | Cause not obvious; reproduce→minimize→hypothesize→instrument→fix (Role 8 Operate) |
 
 **Model routing (local vs cloud):** Before fan-out, run `cto-brain router probe` and `router select` per task kind. Policy-first, auditable — not black-box cost routing. Full discipline: [references/model-router.md](references/model-router.md).
 
