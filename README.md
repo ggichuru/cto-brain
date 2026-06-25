@@ -39,6 +39,8 @@ Bundled core skills:
 | Doc | Description |
 |-----|-------------|
 | **[docs/USAGE.md](docs/USAGE.md)** | **How to build software with cto-brain (start here)** |
+| **[docs/EXAMPLES.md](docs/EXAMPLES.md)** | **Worked examples — the tool in a real round (test-verified)** |
+| [docs/CLOSEOUT-REPORT.md](docs/CLOSEOUT-REPORT.md) | The standing operator close-out report ritual + template |
 | [docs/README.md](docs/README.md) | Documentation index |
 | [docs/MODEL-ROUTER.md](docs/MODEL-ROUTER.md) | Policy-first model + stack routing (two-level merge) |
 | [docs/ENCRYPTED-PACKS.md](docs/ENCRYPTED-PACKS.md) | Public / signed / encrypted skill tiers |

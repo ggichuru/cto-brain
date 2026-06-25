@@ -219,6 +219,13 @@ Before declaring a round complete, run this 60-second loop:
    Silence is also a signal.
 4. **Append to the growth ledger** regardless: one row per round,
    format `YYYY-MM-DD | <round-tag> | <action-summary> | <lesson-or-noop>`.
+5. **Write the operator close-out report (MANDATORY).** Every round that
+   did real work ends with a short, human-voiced report for the person in
+   the chair — bottom line, what changed, how to use it (real commands),
+   what's honestly not done, the one next move. Apply `human-voice-writing`.
+   This is distinct from the ledger row: the row is for the brain, the
+   report is for the human. Both fire, every close-out. Template +
+   discipline: `docs/CLOSEOUT-REPORT.md`.
 
 The ritual is non-skippable. If you find yourself about to say "I'll
 update the skill later," **stop, write it now**. The 60 seconds it
