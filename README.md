@@ -54,6 +54,8 @@ Bundled core skills:
 | [docs/POSITIONING.md](docs/POSITIONING.md) | Where cto-brain sits in the 2026 agent stack (control plane vs runtime) |
 | [docs/GROWTH-AGENT-BRIEF.md](docs/GROWTH-AGENT-BRIEF.md) | Brief for an agent tasked with growing/architecting/stewarding cto-brain |
 | [docs/AGENT-SYSTEM-PROMPT.md](docs/AGENT-SYSTEM-PROMPT.md) | Self-contained, tool-verified system prompt for a no-repo-access steward agent |
+| [docs/AGENT-ONBOARDING.md](docs/AGENT-ONBOARDING.md) | Onboarding for an agent that knows nothing — learn cto-brain from npm + GitHub |
+| [docs/reports/](docs/reports/) | Dated operator close-out reports (round handoffs) |
 | [docs/research/agentic-orchestration-2026.md](docs/research/agentic-orchestration-2026.md) | Verified research: orchestrate-many-models (Fugu) vs one-big-model (Fable/Mythos) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup + test gate |
 | [SECURITY.md](SECURITY.md) | Vulnerability reporting |
