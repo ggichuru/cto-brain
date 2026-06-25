@@ -42,8 +42,11 @@ function countSrcLines() {
 
 const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const binText = fs.readFileSync(path.join(root, "bin/cto-brain.mjs"), "utf8");
+// Count top-level commands by the switch(cmd) case labels (robust to help
+// formatting changes — the old USAGE-string scrape broke when help became a
+// function).
 const cliCommands = new Set(
-  [...binText.matchAll(/^\s+cto-brain ([a-z-]+)/gm)].map((m) => m[1])
+  [...binText.matchAll(/^\s+case "([a-z-]+)":/gm)].map((m) => m[1])
 ).size;
 
 const t0 = Date.now();

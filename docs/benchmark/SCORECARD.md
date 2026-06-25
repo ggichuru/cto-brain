@@ -1,8 +1,8 @@
 # Scorecard — measured numbers
 
-**Snapshot date:** 2026-06-24 (updated after `docs/benchmark/` added)  
-**cto-brain version:** 0.1.0  
-**Method:** `npm run benchmark` (or `node scripts/benchmark-self.mjs`), `npm test`, `npm view` on public packages.
+**Snapshot date:** 2026-06-25  
+**cto-brain version:** 0.5.0 (npm latest: 0.2.0)  
+**Method:** `npm run benchmark` (or `node scripts/benchmark-self.mjs`), `npm test`, `cto-brain eval`, `npm view` on public packages.
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Tool | Version | Tarball | Unpacked | Runtime deps | npm weekly DL* |
 |------|---------|---------|----------|--------------|----------------|
-| **cto-brain** | 0.1.0 | **87.8 kB** | **246.1 kB** (38 files) | **0** | 0 (pre-publish) |
+| **cto-brain** | 0.5.0 | — | **369 kB** (63 files) | **1** (MCP SDK) | published 0.2.0 |
 | orchestray | 2.3.12 | — | **11.6 MB** | 2 | ~202 |
 | skills-npm | 1.2.0 | — | **76.9 kB** | 8 | low |
 | omegacode | 0.0.6 | — | **2.36 MB** | 2 | low |
@@ -28,7 +28,10 @@
 
 \*Downloads from [npmjs.com/package/orchestray](https://www.npmjs.com/package/orchestray) at snapshot time; re-verify before external citation.
 
-**Ratio:** cto-brain unpacked is **~47× smaller** than orchestray (246 kB vs 11.6 MB).
+**Ratio:** cto-brain unpacked is **~31× smaller** than orchestray (369 kB vs 11.6 MB),
+and still ships **one** runtime dependency (the official MCP SDK, added in 0.2.0). Size
+grew from 0.1.0 (246 kB) as MCP, telemetry, the eval harness, the A2A card, the CLI
+renderer, and docs landed — `node_modules` is never published (`files` allowlist).
 
 ---
 
@@ -36,21 +39,41 @@
 
 | Metric | Value |
 |--------|-------|
-| CLI top-level commands | **15** |
-| Router task kinds | **6** |
+| CLI top-level commands | **19** |
+| Router task kinds | **8** |
 | Provider presets | **10** |
-| Platform adapters | **3** (Claude Code, Cursor, Codex) |
+| MCP tools (stdio) | **9** |
+| Platform adapters | **5** (Claude Code, Cursor, Codex, OpenCode, generic) |
 | Bundled skills | **4** |
-| Skill LOC (all `skills/*/SKILL.md`) | **3,349** |
-| `cto-orchestration` SKILL.md alone | **2,501** lines |
-| `src/` LOC | **~1,604** |
+| Skill LOC (all `skills/*/SKILL.md`) | **3,360** |
+| `src/` LOC | **~2,817** |
 | Reviewer briefs | **3** |
-| Project templates | **4** |
-| Test suites | **11** |
-| Test assertions (`ok:`) | **130** |
-| `npm test` wall time | **~2.3 s** |
-| `router probe` (live loopback) | **~122 ms** |
-| `gate check --home .` | **~65 ms** |
+| Test suites | **18** |
+| Test assertions (`ok:`) | **270** |
+| Eval scorecard | **11/11** (routing 5/5 · honesty 2/2 · gate 4/4) |
+| `router probe` (live loopback) | **~169 ms** |
+| `gate check --home .` | **~145 ms** |
+
+---
+
+## B2. Proof of performance — the eval harness (internal, reproducible)
+
+Most "agent" leaderboards measure *model* quality. cto-brain is a *policy* layer, so
+its honest, reproducible proof is whether its **own decisions are correct** — which the
+built-in eval harness measures and CI gates:
+
+```bash
+cto-brain eval          # scorecard JSON / human table; CI fails if any case fails
+```
+
+| Dimension | What it proves | Score |
+|-----------|----------------|:-----:|
+| routing | task→provider/tier selection is correct (builder→local, reviewer→cloud-with-key, …) | **5/5** |
+| honesty | router never fabricates a route — nothing reachable → `null`, `honest:true` | **2/2** |
+| gate | credential gate flags `credentials.json` / `id_rsa` / in-skill secrets | **4/4** |
+
+This is **not** SWE-bench (see honest limits) — it is a falsifiable check that the
+control-plane behaves as specified, run on every CI build. See [docs/EVAL.md](../EVAL.md).
 
 ---
 

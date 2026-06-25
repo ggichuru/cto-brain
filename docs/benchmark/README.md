@@ -16,13 +16,21 @@ CrewAI) solve different problems:
 | **Build orchestration** | How do humans + agents integrate work without scope collisions, secret leaks, or silent partials? |
 
 **cto-brain** is optimized for the second axis. The router (`cto-brain router select`)
-picks *where* to run by **policy + probe**, not learned cost optimization. Fugu and
-Fable-family tools mostly optimize the first axis.
+picks *where* to run by **policy + probe**, not learned cost optimization.
 
-If you need frontier reasoning on hard tasks, use Fugu or cloud APIs. If you need
-**file-scope briefs, reviewer trio, growth ledger, two-level brain sync, and secret
-gating before publish**, use cto-brain (and still dispatch through Claude Code,
-Cursor, or Codex).
+The two endpoints of the *first* axis (verified June 2026 — see
+[docs/research/agentic-orchestration-2026.md](../research/agentic-orchestration-2026.md)):
+**Sakana Fugu** *orchestrates many models* (a learned Conductor/TRINITY behind one API,
+but routing is model-decided and opaque); **Claude Fable 5 / Mythos 5** are *single
+Mythos-class models* (capable, single-vendor — both were export-suspended worldwide on
+2026-06-12). cto-brain is neither — it's the **auditable policy layer above either**, so a
+single-vendor outage just reroutes. (No public head-to-head Fugu benchmark survived
+verification, so none is cited here.)
+
+If you need frontier reasoning on hard tasks, use Fugu or a frontier model. If you need
+**file-scope briefs, reviewer trio, growth ledger, two-level brain sync, secret gating,
+and a falsifiable eval of the brain's own decisions**, use cto-brain (and still dispatch
+through Claude Code, Cursor, or Codex).
 
 ## What we measured
 
@@ -84,7 +92,10 @@ Scores are conservative; see [COMPETITORS.md](./COMPETITORS.md) for nuance.
 
 ## Honest limits of this benchmark
 
-- **No quality benchmark** — we do not run SWE-bench or HumanEval across routers.
+- **No external model benchmark** — we do not run SWE-bench / HumanEval across routers.
+  cto-brain instead ships an internal **eval harness** (`cto-brain eval`) that scores its
+  own routing/honesty/gate decisions and gates CI — proof of *policy* correctness, not
+  model IQ. See [SCORECARD.md §B2](./SCORECARD.md) and [docs/EVAL.md](../EVAL.md).
 - **Download counts change weekly** — re-check `npm view orchestray` before citing.
 - **Partial scores are judgment calls** — Orchestray has patterns/KB but not Role 9;
   we mark 0.5, not 1.
@@ -95,8 +106,8 @@ Scores are conservative; see [COMPETITORS.md](./COMPETITORS.md) for nuance.
 
 ```bash
 cto-brain gate check --home .
-npm test                    # 11 suites; prepublishOnly runs both
-npm pack --dry-run          # 42 files; no .cto-brain/ or test/ in tarball
+npm test                    # 18 suites; prepublishOnly runs gate + tests
+npm pack --dry-run          # 63 files; no .cto-brain/, test/, or node_modules in tarball
 ```
 
 npm publish additionally requires **npm account 2FA (authorization and writes)** or a
