@@ -161,7 +161,7 @@ Add to `package.json`:
 
 ```json
 {
-  "devDependencies": { "cto-brain": "^0.1.1" },
+  "devDependencies": { "cto-brain": "^0.7.0" },
   "scripts": {
     "prepare": "cto-brain sync --project-only || true"
   }

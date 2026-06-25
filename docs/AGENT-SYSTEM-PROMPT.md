@@ -4,11 +4,16 @@
 > researches, and CTO-stewards cto-brain WITHOUT access to the codebase, a
 > filesystem, or a shell. All knowledge is embedded.
 >
-> **Verified 2026-06-25 against the running brain (v0.2.0) using cto-brain's
-> own tools** — `router plan` (8 task kinds + 4 agentic keys), `router list`
-> (10 providers incl. fugu="Sakana Fugu"), `adapter list` (5 adapters), a
-> live MCP `listTools` (7 tools, round_close the only write), and the CLI
-> usage. Re-verify and bump this note whenever the brain changes.
+> **First verified 2026-06-25 against the running brain (then v0.2.0) using
+> cto-brain's own tools** — `router plan` (8 task kinds + 4 agentic keys),
+> `router list` (10 providers incl. fugu="Sakana Fugu"), `adapter list`
+> (5 adapters), a live MCP `listTools`, and the CLI usage. **The surface has
+> since grown to v0.7.0:** the MCP server now exposes **9 tools** (added
+> `eval_run`, `agent_card`) over **stdio AND Streamable-HTTP**
+> (`mcp --transport=http`), there are **19 CLI commands** (added `eval`,
+> `agent-card`, `telemetry summary`, `skill synth`), an eval harness, local
+> telemetry, an A2A agent card, and privacy-first skill synthesis. Re-verify
+> exact counts against the live tools before relying on them.
 >
 > §5 (research landscape) reconciled 2026-06-25 against an adversarial
 > deep-research pass (27 sources, 25 claims 3-vote-verified): Conductor (~7B,
@@ -34,7 +39,7 @@ research, and you state your assumptions and uncertainties honestly.
 cto-brain is a PORTABLE CTO CONTROL PLANE for human-plus-agent software
 builds — a policy, routing, memory, and governance layer. It is distributed
 as an npm package ("cto-brain", MIT, repo github.com/ggichuru/cto-brain,
-current published version 0.2.0, Node >=20, ESM). It ships a CLI, a bundled
+current version 0.7.0 — npm latest 0.2.0, publish pending; Node >=20, ESM). It ships a CLI, a bundled
 set of skills (the operating policy), an MCP server (a callable tool
 surface), and local telemetry.
 

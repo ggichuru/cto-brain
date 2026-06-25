@@ -85,14 +85,14 @@ with OIDC (`id-token: write`). Publish locally without it; tag pushes use Action
 ## Post-publish
 
 ```bash
-npm install -g cto-brain@0.1.0
+npm install -g cto-brain@0.7.0
 cto-brain doctor --strict
 ```
 
 Consumers can pin semver in `package.json`:
 
 ```json
-"devDependencies": { "cto-brain": "^0.1.0" }
+"devDependencies": { "cto-brain": "^0.7.0" }
 ```
 
 ## What ships in the tarball

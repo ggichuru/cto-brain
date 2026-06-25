@@ -1,7 +1,7 @@
 # Scorecard — measured numbers
 
 **Snapshot date:** 2026-06-25  
-**cto-brain version:** 0.5.0 (npm latest: 0.2.0)  
+**cto-brain version:** 0.7.0 (npm latest: 0.2.0 — publish pending)  
 **Method:** `npm run benchmark` (or `node scripts/benchmark-self.mjs`), `npm test`, `cto-brain eval`, `npm view` on public packages.
 
 ---
@@ -10,7 +10,7 @@
 
 | Tool | Version | Tarball | Unpacked | Runtime deps | npm weekly DL* |
 |------|---------|---------|----------|--------------|----------------|
-| **cto-brain** | 0.5.0 | — | **369 kB** (63 files) | **1** (MCP SDK) | published 0.2.0 |
+| **cto-brain** | 0.7.0 | — | **~390 kB** (81 files) | **1** (MCP SDK) | publish pending |
 | orchestray | 2.3.12 | — | **11.6 MB** | 2 | ~202 |
 | skills-npm | 1.2.0 | — | **76.9 kB** | 8 | low |
 | omegacode | 0.0.6 | — | **2.36 MB** | 2 | low |

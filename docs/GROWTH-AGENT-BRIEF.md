@@ -142,23 +142,28 @@ file is incomplete.
 
 ---
 
-## 6. Roadmap — where growth should go (not yet built)
+## 6. Roadmap
 
-Each is its own brick; pick by leverage, keep the control-plane boundary:
-- **Eval harness** — extend `scripts/benchmark-self.mjs` + telemetry into a
-  real eval (router-selection correctness, gate correctness, optionally
-  against SWE-bench Pro / Terminal-Bench). This is the natural next brick
-  after telemetry.
-- **A2A Agent Card** — publish cto-brain as a discoverable remote agent
-  (`/.well-known/agent-card.json`) so other agents can delegate to it.
-- **MCP Streamable-HTTP transport** — beyond stdio, so the brain can run as a
-  shared service.
+**Shipped (v0.3.0–0.7.0):**
+- ✅ **Eval harness** (`cto-brain eval`, CI-gated)
+- ✅ **A2A Agent Card** (`cto-brain agent-card`, `agent_card` tool)
+- ✅ **MCP Streamable-HTTP transport** (`mcp --transport=http`)
+- ✅ **Privacy-first skill synthesis** (`skill synth`, ADR 0002)
+
+**Next bricks** (each its own; keep the control-plane boundary):
 - **Telemetry maturity** — rotation/retention for `runs.jsonl`; split
-  probe-latency from selection-latency (current `latencyMs` conflates them).
-- **Adaptive routing (carefully)** — optional outcome-fed routing stats, kept
-  auditable; determinism stays the default.
-- **Deferred-but-out-of-scope:** durable workflow engine, sandbox fleet, OTel
-  traces. Only if the boundary case is made explicitly.
+  probe-latency from selection-latency. (Production gap #1 — see docs/PRODUCTION.md.)
+- **Model-availability validation** — refuse a route whose default model isn't in
+  the probed list. (Production gap #2.)
+- **Concurrent-safe telemetry** for the HTTP service (locked/centralized sink).
+  (Production gap #3.)
+- **Serve the A2A card over HTTP** at `/.well-known/agent-card.json` + A2A task
+  endpoints — full agent-to-agent delegation.
+- **Adaptive routing (carefully)** — optional outcome-fed stats, kept auditable;
+  determinism stays the default.
+- **Tests for** round-close / deploy-cto / digest / pack-unpack (currently
+  covered only indirectly).
+- **Deferred (out of boundary):** durable workflow engine, sandbox fleet, OTel.
 
 ---
 

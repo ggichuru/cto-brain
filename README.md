@@ -44,6 +44,7 @@ Bundled core skills:
 | [docs/ENCRYPTED-PACKS.md](docs/ENCRYPTED-PACKS.md) | Public / signed / encrypted skill tiers |
 | [docs/benchmark/](docs/benchmark/README.md) | vs 14 peers — methodology + scorecard |
 | [docs/PUBLISH.md](docs/PUBLISH.md) | npm publish + 2FA gate |
+| [docs/PRODUCTION.md](docs/PRODUCTION.md) | Production readiness — GO verdict, known limitations, deploy guidance |
 | [docs/MCP.md](docs/MCP.md) | Run cto-brain as an MCP server; register in Claude/Cursor/Codex |
 | [docs/A2A.md](docs/A2A.md) | Emit an A2A agent card so peer agents can discover cto-brain |
 | [docs/SKILL-SYNTH.md](docs/SKILL-SYNTH.md) | Privacy-first skill synthesis (draft-only, gate-before-read) — ADR 0002 |
@@ -119,7 +120,7 @@ Add to `package.json` for auto-sync on install:
 
 ```json
 {
-  "devDependencies": { "cto-brain": "^0.3.0" },
+  "devDependencies": { "cto-brain": "^0.7.0" },
   "scripts": {
     "prepare": "cto-brain sync --project-only || true"
   }
