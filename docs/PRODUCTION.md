@@ -15,28 +15,26 @@ with the honest limitations below. This page is the deployment truth source.
 
 ## Known limitations (read before deploying)
 
-These are honest gaps, each tracked as a next brick. Workarounds given.
+The three gaps from the first audit are now fixed or mitigated (v0.9.0).
 
-1. **Telemetry has no rotation.** `~/.cto-brain/telemetry/runs.jsonl` is
-   append-only and `telemetry summary` reads the whole file. Fine for months of
-   normal use; at very high volume it grows unbounded.
-   *Workaround:* rotate/truncate `runs.jsonl` on a cron, or set
-   `CTO_BRAIN_NO_TELEMETRY=1`. *Next brick:* size-based rotation.
+1. **Telemetry rotation — FIXED.** `runs.jsonl` now rotates to `runs.jsonl.1`
+   once it passes a size cap (default 5 MB, override `CTO_BRAIN_TELEMETRY_MAX_BYTES`);
+   `telemetry summary` spans both files. One backup is kept, so history older than
+   the last rotation is dropped by design — wire a log drain if you need it all.
+   Opt out entirely with `CTO_BRAIN_NO_TELEMETRY=1`.
 
-2. **The router can select a model that isn't installed.** When a stack is
-   probed but the configured default model tag isn't present, the route is
-   returned honestly (`honest: true`) but a dispatch to that exact model will
-   fail at the provider. The probe's `models[]` is included so callers can check.
-   *Workaround:* validate the chosen `model` against `router probe` output before
-   dispatching, or set `router.json` models to tags you've pulled. *Next brick:*
-   post-probe model-availability validation.
+2. **Model availability — FIXED (surfaced).** A route now carries
+   `modelAvailable` (`true` / `false` / `null`) and appends a `WARNING:` to its
+   `reason` when the chosen model isn't in the probed provider's model list, so
+   you see it before dispatch instead of failing at the provider. It does not
+   hard-refuse (a valid model the probe didn't list shouldn't be blocked); check
+   `modelAvailable !== false` in dispatch code, or pull the tag / fix `router.json`.
 
-3. **HTTP telemetry is best-effort under heavy concurrency.** The Streamable-HTTP
-   transport is fine for normal use, but many concurrent clients contend on the
-   single local JSONL telemetry file, so summaries can be lossy/out-of-order.
-   The routing itself is pure and unaffected. *Workaround:* keep concurrent
-   clients modest, or disable telemetry on a shared HTTP service. *Next brick:*
-   centralized/locked telemetry sink.
+3. **HTTP telemetry under heavy concurrency — MITIGATED.** Each event is a single
+   atomic line append (writes interleave by whole lines, never torn) and
+   `summarize` skips any unparseable line, so concurrent writers don't corrupt the
+   summary. Counts can still be lossy under extreme load; routing itself is pure
+   and unaffected. *Still future:* a centralized/locked sink for large fleets.
 
 ## Deploying the HTTP service safely
 

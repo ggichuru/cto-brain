@@ -66,7 +66,21 @@ function usage() {
     for (const [c, desc] of cmds) lines.push(`  ${cyan("cto-brain")} ${c.padEnd(w)}  ${dim(desc)}`);
     lines.push("");
   }
-  lines.push(dim("Global flags: --json (machine output), --no-color. Human output in a terminal; JSON when piped."));
+  lines.push(heading("Examples"));
+  for (const ex of [
+    ["cto-brain init --project --name my-app", "set up the brain in a repo"],
+    ["cto-brain router plan", "see the task→model table (add --json for CI)"],
+    ["cto-brain router select --task reviewer-security --prefer cloud", "route one task"],
+    ["cto-brain eval", "score the brain's own routing/honesty/gate decisions"],
+    ["cto-brain gate check --home .", "scan for leaked secrets before you share"],
+    ["cto-brain mcp --transport=http --port 3737", "run as a remote MCP service"],
+    ["cto-brain skill synth --topic 'rate limiting' --dir ./svc", "draft a skill (privacy-gated)"],
+  ]) {
+    lines.push(`  ${cyan(ex[0])}`);
+    lines.push(`    ${dim(ex[1])}`);
+  }
+  lines.push("");
+  lines.push(dim("Global flags: --json (machine output), --no-color, --help/-h. Human output in a terminal; JSON when piped. Worked examples: docs/EXAMPLES.md."));
   return lines.join("\n");
 }
 
@@ -90,6 +104,7 @@ function parseArgs(argv) {
     else if (a === "--system") args.system = true;
     else if (a === "--json") args.json = true;
     else if (a === "--no-color") args.noColor = true;
+    else if (a === "--help" || a === "-h") args.help = true;
     else if (a.startsWith("--")) {
       const eq = a.indexOf("=");
       if (eq !== -1) {
@@ -130,6 +145,11 @@ async function main() {
   if (args.noColor) setColorEnabled(false);
   const cmd = args._[0];
   const sub = args._[1];
+
+  if (cmd === "help" || (args.help && !cmd)) {
+    console.log(usage());
+    return;
+  }
 
   try {
     switch (cmd) {

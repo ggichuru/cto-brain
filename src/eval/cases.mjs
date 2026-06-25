@@ -46,6 +46,26 @@ export const EVAL_CASES = [
     input: { task: "inline-edit", prefer: "local", probes: [reachable("ollama")], env: {} },
     expect: { provider: "ollama", tier: "local", honest: true },
   },
+  {
+    name: "flags an override model the provider hasn't pulled",
+    dimension: "routing",
+    kind: "route",
+    input: {
+      task: "dispatch-builder",
+      prefer: "local",
+      probes: [reachable("ollama", ["llama3.2:1b"])],
+      config: { routing: { builder: { provider: "ollama", model: "qwen2.5-coder:14b" } } },
+      env: {},
+    },
+    expect: { provider: "ollama", modelAvailable: false },
+  },
+  {
+    name: "confirms a model that IS in the probe list",
+    dimension: "routing",
+    kind: "route",
+    input: { task: "explore", prefer: "local", probes: [reachable("ollama", ["llama3.2:1b"])], env: {} },
+    expect: { provider: "ollama", modelAvailable: true },
+  },
   // ---- dimension: honesty (no fabricated routes) ----
   {
     name: "nothing reachable + no keys → null provider, still honest",

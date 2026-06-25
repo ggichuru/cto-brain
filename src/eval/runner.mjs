@@ -12,7 +12,13 @@ import { EVAL_CASES } from "./cases.mjs";
 
 function runRouteCase(input) {
   const r = selectRoute(input) || {};
-  return { provider: r.provider ?? null, tier: r.tier ?? null, honest: r.honest ?? null, fallbackUsed: r.fallbackUsed ?? null };
+  return {
+    provider: r.provider ?? null,
+    tier: r.tier ?? null,
+    honest: r.honest ?? null,
+    fallbackUsed: r.fallbackUsed ?? null,
+    modelAvailable: r.modelAvailable ?? null,
+  };
 }
 
 function runGateCase(input) {

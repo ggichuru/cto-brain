@@ -17,9 +17,33 @@ export function runsPath(home = systemBrainHome()) {
   return path.join(telemetryDir(home), "runs.jsonl");
 }
 
+// One rotated backup keeps the live file bounded without losing recent history.
+function rotatedPath(home = systemBrainHome()) {
+  return runsPath(home) + ".1";
+}
+
 function telemetryDisabled() {
   const v = process.env.CTO_BRAIN_NO_TELEMETRY;
   return v === "1" || v === "true";
+}
+
+// Max bytes for the live runs.jsonl before it rotates to runs.jsonl.1
+// (overwriting the previous backup). Default 5 MB; override for tests/ops.
+function maxBytes() {
+  const v = Number(process.env.CTO_BRAIN_TELEMETRY_MAX_BYTES);
+  return Number.isFinite(v) && v > 0 ? v : 5 * 1024 * 1024;
+}
+
+// Rotate before append if the live file has grown past the cap. Best-effort.
+function rotateIfNeeded(home) {
+  try {
+    const p = runsPath(home);
+    if (fs.statSync(p).size >= maxBytes()) {
+      fs.renameSync(p, rotatedPath(home)); // overwrites prior .1
+    }
+  } catch {
+    /* no file yet, or stat/rename raced — fine */
+  }
 }
 
 // Append one event. Best-effort: swallows all errors (telemetry must never
@@ -41,6 +65,9 @@ export function recordEvent(event = {}, home = systemBrainHome()) {
       ...(event.ok != null ? { ok: !!event.ok } : {}),
     };
     ensureDir(telemetryDir(home));
+    rotateIfNeeded(home);
+    // Single atomic line write — under concurrency, writes interleave by whole
+    // lines, never torn; summarize() skips any unparseable line defensively.
     fs.appendFileSync(runsPath(home), JSON.stringify(row) + "\n");
     return true;
   } catch {
@@ -63,12 +90,13 @@ export function summarize(home = systemBrainHome()) {
     toolCalls: {},
     latencyMs: { p50: null, p95: null, max: null },
   };
-  let raw;
-  try {
-    raw = fs.readFileSync(runsPath(home), "utf8");
-  } catch {
-    return summary; // no telemetry yet
+  // Span the rotated backup + the live file so a recent rotation doesn't drop
+  // history from the summary. Oldest first.
+  let raw = "";
+  for (const p of [rotatedPath(home), runsPath(home)]) {
+    try { raw += fs.readFileSync(p, "utf8"); } catch { /* missing is fine */ }
   }
+  if (!raw) return summary; // no telemetry yet
   const latencies = [];
   for (const line of raw.split("\n")) {
     if (!line.trim()) continue;

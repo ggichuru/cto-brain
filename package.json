@@ -1,6 +1,6 @@
 {
   "name": "cto-brain",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Portable CTO orchestration brain — skills, sync, gating, and agent adapters for multi-agent builds",
   "type": "module",
   "bin": {

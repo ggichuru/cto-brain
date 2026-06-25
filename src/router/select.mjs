@@ -122,6 +122,11 @@ export function selectRoute(opts = {}) {
 
     const model = pickModel(preset, probed, rule, taskOverride);
     const baseUrl = probed?.baseUrl || resolveBaseUrl(preset, env);
+    const modelAvailable = checkModelAvailable(model, probed);
+    let reason = buildReason(preset, probed, rule, taskOverride, prefer);
+    if (modelAvailable === false) {
+      reason += `; WARNING: model '${model}' is not in the probed list [${(probed.models || []).join(", ")}] — pull it on ${providerId} or set router.json to an available tag`;
+    }
 
     return {
       provider: providerId,
@@ -130,9 +135,10 @@ export function selectRoute(opts = {}) {
       tier: preset.tier,
       task,
       prefer,
-      reason: buildReason(preset, probed, rule, taskOverride, prefer),
+      reason,
       honest: true,
       fallbackUsed: probed ? false : preset.tier === "cloud" && credOk,
+      modelAvailable, // true = in probe list; false = NOT present (dispatch will fail); null = no list to check (cloud/unprobed)
     };
   }
 
@@ -193,6 +199,17 @@ function getTaskOverride(config, task) {
   if (task === "integrate" && r.integrate) return r.integrate;
   if (task === "inline-edit" && r["inline-edit"]) return r["inline-edit"];
   if (r[task]) return r[task];
+  return null;
+}
+
+// Honest model-availability check: only meaningful when a local provider was
+// probed and returned a model list. true=present, false=missing (dispatch will
+// fail), null=can't tell (cloud, or no model list).
+function checkModelAvailable(model, probed) {
+  if (!model) return null;
+  if (probed && Array.isArray(probed.models) && probed.models.length) {
+    return probed.models.includes(model);
+  }
   return null;
 }
 

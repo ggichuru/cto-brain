@@ -49,6 +49,20 @@ const after = fs.readFileSync(runsPath(home), "utf8");
 ok("CTO_BRAIN_NO_TELEMETRY suppresses writes", before === after);
 delete process.env.CTO_BRAIN_NO_TELEMETRY;
 
+// --- rotation: live file caps; backup keeps recent history; summary spans both ---
+const rotHome = fs.mkdtempSync(path.join(os.tmpdir(), "ctob-tele-rot-"));
+process.env.CTO_BRAIN_TELEMETRY_MAX_BYTES = "300"; // tiny cap to force rotation fast
+for (let i = 0; i < 40; i++) recordEvent({ kind: "cli_route", task: "explore", provider: "ollama", latencyMs: i }, rotHome);
+ok("rotated backup runs.jsonl.1 created", fs.existsSync(runsPath(rotHome) + ".1"));
+ok("live file stays bounded near the cap", fs.statSync(runsPath(rotHome)).size < 2000);
+const rs = summarize(rotHome);
+const liveLines = fs.readFileSync(runsPath(rotHome), "utf8").trim().split("\n").filter(Boolean).length;
+// Single backup intentionally drops history older than the last rotation, so
+// total < 40 is correct; what matters is the summary spans backup + live.
+ok("summary spans backup + live (more than live alone)", rs.total > liveLines && rs.total <= 40);
+delete process.env.CTO_BRAIN_TELEMETRY_MAX_BYTES;
+fs.rmSync(rotHome, { recursive: true, force: true });
+
 fs.rmSync(home, { recursive: true, force: true });
 
 if (failures) { console.error("\n" + failures + " telemetry failure(s)"); process.exit(1); }
