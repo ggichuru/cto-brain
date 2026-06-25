@@ -82,12 +82,14 @@ const report = {
     bundledSkills: (pkg.agentskills?.skills || []).length,
     skillLoc: countLines("skills"),
     srcLoc: countSrcLines(),
-    adapters: 3,
+    adapters: 5,
     reviewerBriefs: fs.readdirSync(path.join(root, "pipeline/reviewers")).length,
     templates: fs.readdirSync(path.join(root, "templates")).length,
   },
   tests: {
-    suites: 11,
+    suites: fs
+      .readdirSync(path.join(root, "test"))
+      .filter((f) => f.endsWith(".mjs")).length,
     assertionsOk: okCount,
     wallMs: testMs,
     passed: testRun.ok,

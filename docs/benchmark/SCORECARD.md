@@ -1,8 +1,10 @@
 # Scorecard — measured numbers
 
-**Snapshot date:** 2026-06-25  
-**cto-brain version:** 0.7.0 (npm latest: 0.2.0 — publish pending)  
+**Snapshot date:** 2026-06-25 (re-measured at v0.9.0)  
+**cto-brain version:** 0.9.0 (npm latest: 0.2.0 — publish pending)  
 **Method:** `npm run benchmark` (or `node scripts/benchmark-self.mjs`), `npm test`, `cto-brain eval`, `npm view` on public packages.
+
+**Live re-measurement (v0.9.0, Node 22), reproduced by `node scripts/benchmark-self.mjs` + `cto-brain eval`:** eval **13/13** (routing 7/7 · honesty 2/2 · gate 4/4); tarball **151.5 kB**, unpacked **427.5 kB** (72 files), **1** runtime dep; **20** CLI commands, **4** skills, **5** adapters; **21** test suites / **323** runtime assertions; `router probe` **145 ms**, `gate check` **138 ms**. Every per-cell table below is refreshed to these v0.9.0 numbers.
 
 ---
 
@@ -10,7 +12,7 @@
 
 | Tool | Version | Tarball | Unpacked | Runtime deps | npm weekly DL* |
 |------|---------|---------|----------|--------------|----------------|
-| **cto-brain** | 0.7.0 | — | **~390 kB** (81 files) | **1** (MCP SDK) | publish pending |
+| **cto-brain** | 0.9.0 | **151 kB** | **427 kB** (72 files) | **1** (MCP SDK) | publish pending |
 | orchestray | 2.3.12 | — | **11.6 MB** | 2 | ~202 |
 | skills-npm | 1.2.0 | — | **76.9 kB** | 8 | low |
 | omegacode | 0.0.6 | — | **2.36 MB** | 2 | low |
@@ -28,7 +30,7 @@
 
 \*Downloads from [npmjs.com/package/orchestray](https://www.npmjs.com/package/orchestray) at snapshot time; re-verify before external citation.
 
-**Ratio:** cto-brain unpacked is **~31× smaller** than orchestray (369 kB vs 11.6 MB),
+**Ratio:** cto-brain unpacked is **~27× smaller** than orchestray (427 kB vs 11.6 MB),
 and still ships **one** runtime dependency (the official MCP SDK, added in 0.2.0). Size
 grew from 0.1.0 (246 kB) as MCP, telemetry, the eval harness, the A2A card, the CLI
 renderer, and docs landed — `node_modules` is never published (`files` allowlist).
@@ -39,20 +41,20 @@ renderer, and docs landed — `node_modules` is never published (`files` allowli
 
 | Metric | Value |
 |--------|-------|
-| CLI top-level commands | **19** |
+| CLI top-level commands | **20** |
 | Router task kinds | **8** |
 | Provider presets | **10** |
 | MCP tools (stdio) | **9** |
 | Platform adapters | **5** (Claude Code, Cursor, Codex, OpenCode, generic) |
 | Bundled skills | **4** |
-| Skill LOC (all `skills/*/SKILL.md`) | **3,360** |
-| `src/` LOC | **~2,817** |
-| Reviewer briefs | **3** |
-| Test suites | **18** |
-| Test assertions (`ok:`) | **270** |
-| Eval scorecard | **11/11** (routing 5/5 · honesty 2/2 · gate 4/4) |
-| `router probe` (live loopback) | **~169 ms** |
-| `gate check --home .` | **~145 ms** |
+| Skill LOC (all `skills/*/SKILL.md`) | **3,367** |
+| `src/` LOC | **3,311** |
+| Reviewer briefs | **3** (security-audit, devils-advocate, tech-lead) |
+| Test suites | **21** |
+| Test assertions (runtime `ok:`) | **323** |
+| Eval scorecard | **13/13** (routing 7/7 · honesty 2/2 · gate 4/4) |
+| `router probe` (live loopback) | **~145 ms** |
+| `gate check --home .` | **~138 ms** |
 
 ---
 
@@ -68,7 +70,7 @@ cto-brain eval          # scorecard JSON / human table; CI fails if any case fai
 
 | Dimension | What it proves | Score |
 |-----------|----------------|:-----:|
-| routing | task→provider/tier selection is correct (builder→local, reviewer→cloud-with-key, …) | **5/5** |
+| routing | task→provider/tier selection is correct (builder→local, reviewer→cloud-with-key, …) | **7/7** |
 | honesty | router never fabricates a route — nothing reachable → `null`, `honest:true` | **2/2** |
 | gate | credential gate flags `credentials.json` / `id_rsa` / in-skill secrets | **4/4** |
 
@@ -81,7 +83,7 @@ control-plane behaves as specified, run on every CI build. See [docs/EVAL.md](..
 
 | Tool | Operator interface | Config surface |
 |------|-------------------|----------------|
-| **cto-brain** | 15 CLI commands | `.cto-brain/router.json`, skills, `.cto-brainignore` |
+| **cto-brain** | 20 CLI commands | `.cto-brain/router.json`, skills, `.cto-brainignore` |
 | orchestray | 22+ `/orchestray:*` slash commands | `.orchestray/config.json` (~80 keys; `complexity_threshold` default **4**) |
 | skills-npm | `npx skills-npm setup` | npm package paths |
 | omegacode | `omegacode` CLI | JS workflow DSL |
@@ -132,10 +134,10 @@ Fugu Ultra list pricing (pay-as-you-go, snapshot): **$5 / $30** per 1M input/out
 
 | | cto-brain | Closest size peer | Closest orchestration peer |
 |--|-----------|-------------------|----------------------------|
-| Unpacked | **246 kB** | skills-npm **77 kB** (distribution only) | orchestray **11.6 MB** |
+| Unpacked | **427 kB** | skills-npm **77 kB** (distribution only) | orchestray **11.6 MB** |
 | Process /12 | **12.0** | skills-npm **3.0** | orchestray **5.0** |
-| Test proof | **11 suites, 130 asserts** | — | — |
-| Cross-IDE | **3 adapters** | skills-npm (symlink any agent dir) | orchestray **1** (Claude Code) |
+| Test proof | **21 suites, 323 asserts; eval 13/13** | — | — |
+| Cross-IDE | **5 adapters** | skills-npm (symlink any agent dir) | orchestray **1** (Claude Code) |
 
 ---
 
@@ -145,7 +147,7 @@ Fugu Ultra list pricing (pay-as-you-go, snapshot): **$5 / $30** per 1M input/out
 2. **Learned routing quality** — Fugu can win on hard reasoning; cto-brain uses rules + probe.
 3. **Market proof** — Orchestray has npm downloads; cto-brain needs publish + adoption.
 4. **IDE-native UX** — Continue/Cursor beat terminal CLI for in-editor flow.
-5. **Model tag validation** — router trusts `router.json` override even if Ollama lacks that tag (documented gap).
+5. **Model tag validation** — since 0.9.0 the router *surfaces* `modelAvailable:false` + a `WARNING` in `reason` when `router.json` names a tag the stack hasn't pulled, but by design it warns rather than hard-refusing, so a valid-but-unlisted tag still routes.
 
 ---
 
