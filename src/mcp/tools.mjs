@@ -12,6 +12,7 @@ import { gateCheck } from "../gate/pack.mjs";
 import { systemBrainHome } from "../paths.mjs";
 import { recordEvent } from "../telemetry/recorder.mjs";
 import { runEval } from "../eval/runner.mjs";
+import { buildAgentCard } from "../a2a/card.mjs";
 
 const PREFER_ENUM = ["auto", "local", "cloud"];
 
@@ -88,6 +89,12 @@ export const TOOLS = [
       "Run the cto-brain eval suite (router-selection, honesty, and gate correctness) and return the scorecard. Read-only.",
     inputSchema: { type: "object", properties: {} },
     handler: () => runEval(),
+  },
+  {
+    name: "agent_card",
+    description: "Return the A2A agent card describing cto-brain's discoverable skills. Read-only.",
+    inputSchema: { type: "object", properties: {} },
+    handler: () => buildAgentCard(),
   },
   {
     name: "round_close",

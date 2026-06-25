@@ -9,6 +9,9 @@ import { routerInit, routerList, routerPlan, routerProbe, routerSelect, stackSta
 import { startStdioServer } from "../src/mcp/server.mjs";
 import { summarize as telemetrySummarize } from "../src/telemetry/recorder.mjs";
 import { runEval } from "../src/eval/runner.mjs";
+import { buildAgentCard } from "../src/a2a/card.mjs";
+import fs from "node:fs";
+import path from "node:path";
 import { setColorEnabled, useJson, heading, dim, bold, cyan } from "../src/cli/ui.mjs";
 import * as render from "../src/cli/render.mjs";
 import { systemBrainHome } from "../src/paths.mjs";
@@ -43,6 +46,7 @@ function usage() {
     ]],
     ["Serve, measure & ship", [
       ["mcp", "Run as an MCP server (stdio)"],
+      ["agent-card [--out <path>]", "Emit the A2A agent card (discovery)"],
       ["telemetry summary", "Local run-telemetry KPIs"],
       ["eval", "Score routing/honesty/gate decisions"],
       ["gate check [--home <path>]", "Scan for credential leaks"],
@@ -330,6 +334,17 @@ async function main() {
       }
       case "mcp": {
         await startStdioServer();
+        break;
+      }
+      case "agent-card": {
+        const card = buildAgentCard({ url: args.url });
+        if (args.out) {
+          fs.mkdirSync(path.dirname(path.resolve(args.out)), { recursive: true });
+          fs.writeFileSync(args.out, JSON.stringify(card, null, 2) + "\n");
+          console.log(`Wrote ${args.out} (${card.skills.length} skills)`);
+        } else {
+          console.log(JSON.stringify(card, null, 2));
+        }
         break;
       }
       case "telemetry": {

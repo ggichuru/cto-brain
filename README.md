@@ -45,6 +45,7 @@ Bundled core skills:
 | [docs/benchmark/](docs/benchmark/README.md) | vs 14 peers — methodology + scorecard |
 | [docs/PUBLISH.md](docs/PUBLISH.md) | npm publish + 2FA gate |
 | [docs/MCP.md](docs/MCP.md) | Run cto-brain as an MCP server; register in Claude/Cursor/Codex |
+| [docs/A2A.md](docs/A2A.md) | Emit an A2A agent card so peer agents can discover cto-brain |
 | [docs/EVAL.md](docs/EVAL.md) | Eval harness — scoring the brain's routing/honesty/gate decisions |
 | [docs/POSITIONING.md](docs/POSITIONING.md) | Where cto-brain sits in the 2026 agent stack (control plane vs runtime) |
 | [docs/GROWTH-AGENT-BRIEF.md](docs/GROWTH-AGENT-BRIEF.md) | Brief for an agent tasked with growing/architecting/stewarding cto-brain |
