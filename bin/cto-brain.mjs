@@ -11,6 +11,8 @@ import { startHttpServer } from "../src/mcp/streamableHttp.mjs";
 import { summarize as telemetrySummarize } from "../src/telemetry/recorder.mjs";
 import { runEval } from "../src/eval/runner.mjs";
 import { buildAgentCard } from "../src/a2a/card.mjs";
+import { discoverSkills } from "../src/synth/discover.mjs";
+import { synthesizeSkill } from "../src/synth/synthesize.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { setColorEnabled, useJson, heading, dim, bold, cyan } from "../src/cli/ui.mjs";
@@ -50,6 +52,7 @@ function usage() {
       ["agent-card [--out <path>]", "Emit the A2A agent card (discovery)"],
       ["telemetry summary", "Local run-telemetry KPIs"],
       ["eval", "Score routing/honesty/gate decisions"],
+      ["skill synth --topic <t> [--dir <p>]", "Synthesize a DRAFT skill (privacy-gated)"],
       ["gate check [--home <path>]", "Scan for credential leaks"],
       ["pack / unpack [--encrypt]", "Signed/encrypted skill packs"],
       ["preflight dispatch|commit", "Pre-flight checklists"],
@@ -368,6 +371,24 @@ async function main() {
         const r = { ...runEval(), generated: new Date().toISOString() };
         emit(args, r, render.renderEval);
         if (r.failed > 0) process.exit(1);
+        break;
+      }
+      case "skill": {
+        if (sub !== "synth") throw new Error("Usage: cto-brain skill synth --topic <topic> [--dir <path>] [--paths a,b]");
+        if (!args.topic) throw new Error("--topic <topic> required");
+        const extraPaths = args.paths ? args.paths.split(",").map((s) => s.trim()).filter(Boolean) : [];
+        const candidates = discoverSkills({ dir: args.dir, extraPaths });
+        const result = synthesizeSkill({ candidates, topic: args.topic });
+        if (result.refused) {
+          console.error(`Refused (nothing written): ${result.reason}`);
+          process.exit(1);
+        }
+        const outPath = path.resolve(result.draftPath);
+        fs.mkdirSync(path.dirname(outPath), { recursive: true });
+        fs.writeFileSync(outPath, result.content);
+        const gate = gateCheck(process.cwd()); // final hard floor
+        console.log(`Wrote DRAFT ${result.draftPath} from ${candidates.length} candidate(s). gate: ${gate.ok ? "ok" : "PROBLEMS"}`);
+        console.log("Review it, then promote out of skills-draft/ manually — never auto-wired or auto-packed.");
         break;
       }
       default:

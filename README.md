@@ -46,6 +46,7 @@ Bundled core skills:
 | [docs/PUBLISH.md](docs/PUBLISH.md) | npm publish + 2FA gate |
 | [docs/MCP.md](docs/MCP.md) | Run cto-brain as an MCP server; register in Claude/Cursor/Codex |
 | [docs/A2A.md](docs/A2A.md) | Emit an A2A agent card so peer agents can discover cto-brain |
+| [docs/SKILL-SYNTH.md](docs/SKILL-SYNTH.md) | Privacy-first skill synthesis (draft-only, gate-before-read) — ADR 0002 |
 | [docs/EVAL.md](docs/EVAL.md) | Eval harness — scoring the brain's routing/honesty/gate decisions |
 | [docs/POSITIONING.md](docs/POSITIONING.md) | Where cto-brain sits in the 2026 agent stack (control plane vs runtime) |
 | [docs/GROWTH-AGENT-BRIEF.md](docs/GROWTH-AGENT-BRIEF.md) | Brief for an agent tasked with growing/architecting/stewarding cto-brain |
