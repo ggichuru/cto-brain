@@ -45,6 +45,7 @@ Bundled core skills:
 | [docs/benchmark/](docs/benchmark/README.md) | vs 14 peers — methodology + scorecard |
 | [docs/PUBLISH.md](docs/PUBLISH.md) | npm publish + 2FA gate |
 | [docs/POSITIONING.md](docs/POSITIONING.md) | Where cto-brain sits in the 2026 agent stack (control plane vs runtime) |
+| [docs/GROWTH-AGENT-BRIEF.md](docs/GROWTH-AGENT-BRIEF.md) | Brief for an agent tasked with growing/architecting/stewarding cto-brain |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup + test gate |
 | [SECURITY.md](SECURITY.md) | Vulnerability reporting |
 
