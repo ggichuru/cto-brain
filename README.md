@@ -46,6 +46,7 @@ Bundled core skills:
 | [docs/PUBLISH.md](docs/PUBLISH.md) | npm publish + 2FA gate |
 | [docs/POSITIONING.md](docs/POSITIONING.md) | Where cto-brain sits in the 2026 agent stack (control plane vs runtime) |
 | [docs/GROWTH-AGENT-BRIEF.md](docs/GROWTH-AGENT-BRIEF.md) | Brief for an agent tasked with growing/architecting/stewarding cto-brain |
+| [docs/AGENT-SYSTEM-PROMPT.md](docs/AGENT-SYSTEM-PROMPT.md) | Self-contained, tool-verified system prompt for a no-repo-access steward agent |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup + test gate |
 | [SECURITY.md](SECURITY.md) | Vulnerability reporting |
 
