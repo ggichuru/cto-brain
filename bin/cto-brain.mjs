@@ -7,6 +7,7 @@ import { writeWeeklyDigest } from "../src/cli/digest.mjs";
 import { gateCheck, packBrain, unpackBrain } from "../src/gate/pack.mjs";
 import { routerInit, routerList, routerPlan, routerProbe, routerSelect, stackStatus, TASK_KINDS } from "../src/cli/router.mjs";
 import { startStdioServer } from "../src/mcp/server.mjs";
+import { startHttpServer } from "../src/mcp/streamableHttp.mjs";
 import { summarize as telemetrySummarize } from "../src/telemetry/recorder.mjs";
 import { runEval } from "../src/eval/runner.mjs";
 import { buildAgentCard } from "../src/a2a/card.mjs";
@@ -45,7 +46,7 @@ function usage() {
       ["stack status", "Configured-stack reachability"],
     ]],
     ["Serve, measure & ship", [
-      ["mcp", "Run as an MCP server (stdio)"],
+      ["mcp [--transport=http] [--port N] [--allow-origin <o>]", "Run as an MCP server (stdio default, or HTTP)"],
       ["agent-card [--out <path>]", "Emit the A2A agent card (discovery)"],
       ["telemetry summary", "Local run-telemetry KPIs"],
       ["eval", "Score routing/honesty/gate decisions"],
@@ -87,8 +88,14 @@ function parseArgs(argv) {
     else if (a === "--json") args.json = true;
     else if (a === "--no-color") args.noColor = true;
     else if (a.startsWith("--")) {
-      const key = a.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-      args[key] = argv[++i];
+      const eq = a.indexOf("=");
+      if (eq !== -1) {
+        const key = a.slice(2, eq).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        args[key] = a.slice(eq + 1); // --key=value
+      } else {
+        const key = a.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        args[key] = argv[++i]; // --key value
+      }
     } else args._.push(a);
   }
   return args;
@@ -333,7 +340,12 @@ async function main() {
         throw new Error("Usage: cto-brain stack status");
       }
       case "mcp": {
-        await startStdioServer();
+        if (args.transport === "http") {
+          const allowedOrigins = args.allowOrigin ? args.allowOrigin.split(",").map((s) => s.trim()).filter(Boolean) : [];
+          await startHttpServer({ port: args.port ? Number(args.port) : undefined, allowedOrigins });
+        } else {
+          await startStdioServer();
+        }
         break;
       }
       case "agent-card": {

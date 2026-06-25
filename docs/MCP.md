@@ -16,6 +16,24 @@ node bin/cto-brain.mjs mcp
 Logs go to stderr; stdout stays clean for the protocol. The server reports its
 version from `package.json`.
 
+### As an HTTP service (Streamable-HTTP)
+
+To run cto-brain as a shared remote service instead of a per-client stdio
+process, use the Streamable-HTTP transport (same 9 tools, one `/mcp` endpoint):
+
+```bash
+cto-brain mcp --transport=http --port 3737
+# permit a browser origin (otherwise loopback-only):
+cto-brain mcp --transport=http --port 3737 --allow-origin https://app.example.com
+```
+
+**Security posture (defaults):** binds to **127.0.0.1** only; rejects
+disallowed cross-origin requests with **HTTP 403** (DNS-rebinding guard) —
+native MCP clients send no `Origin` and are allowed; logs never include
+headers, bodies, or secrets. For real remote exposure, front it with a TLS
+terminator / auth proxy and pass the public host via `--allow-origin`. Connect
+with any MCP client's Streamable-HTTP transport pointed at `http://<host>:<port>/mcp`.
+
 ## Tools
 
 | Tool | Wraps | Mutates? |
