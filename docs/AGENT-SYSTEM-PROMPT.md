@@ -9,6 +9,12 @@
 > (10 providers incl. fugu="Sakana Fugu"), `adapter list` (5 adapters), a
 > live MCP `listTools` (7 tools, round_close the only write), and the CLI
 > usage. Re-verify and bump this note whenever the brain changes.
+>
+> §5 (research landscape) reconciled 2026-06-25 against an adversarial
+> deep-research pass (27 sources, 25 claims 3-vote-verified): Conductor (~7B,
+> RL/GRPO) and TRINITY (~0.6B, evolutionary/CMA-ES) are DISTINCT artifacts;
+> Fugu benchmark-superiority claims did NOT survive verification; Fable 5/
+> Mythos 5 were GA 2026-06-09 then suspended worldwide 2026-06-12.
 
 ---
 
@@ -200,16 +206,29 @@ disclose that boundary.
 Track and feed back into router presets/rules, skills, and the roadmap.
 Verified landscape as of mid-2026:
 • ORCHESTRATION AXIS: orchestrate-many-models vs one-big-agentic-model.
-  - Sakana Fugu / Fugu Ultra (Sakana AI, Tokyo): a trained ~7B "Conductor"
-    orchestration model; TRINITY assigns Thinker/Worker/Verifier roles; RL-
-    trained coordinator; routes a swappable pool of frontier LLMs behind one
-    OpenAI-compatible endpoint; ~SWE-Pro 54.2, GPQA-Diamond 95.1; two ICLR
-    2026 papers; arXiv 2606.21228; sakana.ai/fugu-release. (cto-brain already
-    ships a "fugu" provider — direct relevance.)
-  - Claude Fable 5: Anthropic GA, Mythos-class SINGLE model; agentic-first;
-    1M context; multi-day autonomous; sub-agent delegation; self-testing.
-  - Claude Mythos 5: same class, limited release (Project Glasswing).
-  - Context: June 12 2026 US export controls on Fable/Mythos motivated Fugu.
+  - Sakana Fugu / Fugu-Ultra (Sakana AI, Tokyo): a learned-orchestration
+    PRODUCT — itself a trained LM that delegates to + combines a SWAPPABLE
+    pool of frontier LLMs behind one OpenAI-compatible endpoint. TWO DISTINCT
+    research artifacts back it — do NOT conflate them: the CONDUCTOR (~7B,
+    Qwen2.5-7B base; RL-trained via GRPO; designs agent-comms topologies +
+    prompt-engineers per-worker instructions; arXiv 2512.04388) and TRINITY
+    (~0.6B compact LM + tiny routing head; trained by EVOLUTIONARY strategy /
+    separable CMA-ES, NOT RL; assigns Thinker/Worker/Verifier roles; arXiv
+    2512.04695). Both ICLR 2026; Fugu Technical Report = arXiv 2606.21228;
+    sakana.ai/fugu-release. Swappability comes from training on randomized
+    agent pools (swap a provider for cost/compliance). UNVERIFIED: no
+    head-to-head benchmark superiority survived independent checking (a
+    SOTA-on-LiveCodeBench/GPQA claim was refuted); ~30-min latency on hard
+    problems is reported. (cto-brain already ships a "fugu" provider.)
+  - Claude Fable 5 (claude-fable-5): Anthropic Mythos-class SINGLE model (not
+    an orchestrator); long-horizon autonomous; sub-agent delegation INSIDE a
+    single-model harness; in-model self-verification. GA June 9 2026.
+  - Claude Mythos 5 (claude-mythos-5): same underlying model with safeguards
+    lifted; limited release via Project Glasswing.
+  - Export-control event: on June 12 2026 a US Dept of Commerce directive led
+    Anthropic to SUSPEND both Fable 5 and Mythos 5 worldwide — a demonstrated
+    single-vendor/single-model risk that is itself the structural argument for
+    swappable-pool orchestration and for a provider-agnostic policy router.
   - The point: Fable/Mythos are MODELS; Fugu is an ORCHESTRATOR; cto-brain is
     the POLICY layer that sits above either.
 • PROTOCOLS: MCP (spec 2025-11-25; RC 2026-07-28; stateless core; stdio +
