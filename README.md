@@ -91,6 +91,10 @@ cto-brain sync --promote
 | `eval` | Score the brain's own routing/honesty/gate decisions ([docs/EVAL.md](docs/EVAL.md)) |
 | `hook install` | Stop-hook script for post-turn project sync |
 
+**Output modes:** commands print human-readable, colorized output in a
+terminal and raw JSON when piped or given `--json` (so `… | jq` and CI stay
+byte-stable). Color honors `NO_COLOR`; force off with `--no-color`.
+
 Routing decisions and MCP tool calls are logged **locally only** to
 `~/.cto-brain/telemetry/runs.jsonl` (provider/model/latency — never secrets or
 URLs; nothing leaves your machine). Opt out with `CTO_BRAIN_NO_TELEMETRY=1`.

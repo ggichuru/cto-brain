@@ -9,34 +9,58 @@ import { routerInit, routerList, routerPlan, routerProbe, routerSelect, stackSta
 import { startStdioServer } from "../src/mcp/server.mjs";
 import { summarize as telemetrySummarize } from "../src/telemetry/recorder.mjs";
 import { runEval } from "../src/eval/runner.mjs";
+import { setColorEnabled, useJson, heading, dim, bold, cyan } from "../src/cli/ui.mjs";
+import * as render from "../src/cli/render.mjs";
 import { systemBrainHome } from "../src/paths.mjs";
 
-const USAGE = `cto-brain — portable CTO orchestration brain
+// Print `data` as human-readable (terminal) or raw JSON (piped / --json).
+function emit(args, data, renderFn) {
+  if (renderFn && !useJson(args)) console.log(renderFn(data));
+  else console.log(JSON.stringify(data, null, 2));
+}
 
-Usage:
-  cto-brain init [--project] [--name <project>]
-  cto-brain sync [--pull|--promote|--project-only] [--wire]
-  cto-brain install [--adapters claude-code,cursor,codex] [--project|--global]
-  cto-brain doctor [--strict]
-  cto-brain adapter list|pick|wire|status [--adapters ...] [--project|--global] [--no-rules]
-  cto-brain round-close --tag <tag> --summary <text> [--lesson <text>] [--feedback <topic>]
-  cto-brain deploy-cto [--name <project>]
-  cto-brain digest [--week YYYY-Www] [--force]
-  cto-brain gate check [--home <path>]
-  cto-brain pack [--output <file>] [--encrypt] [--passphrase <p>]
-  cto-brain unpack --input <file> [--dest <path>] [--decrypt] [--passphrase <p>]
-  cto-brain hook install
-  cto-brain preflight dispatch|commit
-  cto-brain router list
-  cto-brain router probe [--all]
-  cto-brain router select --task <kind> [--prefer local|cloud|auto]
-  cto-brain router plan [--prefer local|cloud|auto]
-  cto-brain router init [--force] [--system]
-  cto-brain stack status
-  cto-brain mcp
-  cto-brain telemetry summary
-  cto-brain eval
-`;
+function usage() {
+  const groups = [
+    ["Setup", [
+      ["init [--project] [--name <project>]", "Bootstrap system + optional project brain"],
+      ["sync [--pull|--promote|--project-only] [--wire]", "Non-destructive system ↔ project sync"],
+      ["install [--adapters …] [--project|--global]", "Wire skills to agent platforms"],
+      ["doctor [--strict]", "Health check: skills, credentials, adapters"],
+    ]],
+    ["Skills & adapters", [
+      ["adapter list|pick|wire|status [--adapters …]", "Manage platform skill wiring"],
+      ["round-close --tag <t> --summary <s> [--lesson <l>]", "Append growth-ledger row (+feedback)"],
+      ["deploy-cto [--name <project>]", "Charter + portfolio register + first brief"],
+      ["digest [--week YYYY-Www]", "Weekly lead-CTO portfolio digest"],
+    ]],
+    ["Router", [
+      ["router list", "List providers"],
+      ["router probe [--all]", "Probe reachable stacks/providers"],
+      ["router select --task <kind> [--prefer …]", "Resolve one task's route"],
+      ["router plan [--prefer local|cloud|auto]", "Full task→route matrix"],
+      ["router init [--force] [--system]", "Write a router.json layer"],
+      ["stack status", "Configured-stack reachability"],
+    ]],
+    ["Serve, measure & ship", [
+      ["mcp", "Run as an MCP server (stdio)"],
+      ["telemetry summary", "Local run-telemetry KPIs"],
+      ["eval", "Score routing/honesty/gate decisions"],
+      ["gate check [--home <path>]", "Scan for credential leaks"],
+      ["pack / unpack [--encrypt]", "Signed/encrypted skill packs"],
+      ["preflight dispatch|commit", "Pre-flight checklists"],
+      ["hook install", "Post-turn project-sync hook"],
+    ]],
+  ];
+  const lines = [`${bold("cto-brain")} ${dim("— portable CTO orchestration brain")}`, ""];
+  for (const [title, cmds] of groups) {
+    lines.push(heading(title));
+    const w = Math.max(...cmds.map(([c]) => c.length));
+    for (const [c, desc] of cmds) lines.push(`  ${cyan("cto-brain")} ${c.padEnd(w)}  ${dim(desc)}`);
+    lines.push("");
+  }
+  lines.push(dim("Global flags: --json (machine output), --no-color. Human output in a terminal; JSON when piped."));
+  return lines.join("\n");
+}
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -56,6 +80,8 @@ function parseArgs(argv) {
     else if (a === "--force") args.force = true;
     else if (a === "--all") args.all = true;
     else if (a === "--system") args.system = true;
+    else if (a === "--json") args.json = true;
+    else if (a === "--no-color") args.noColor = true;
     else if (a.startsWith("--")) {
       const key = a.slice(2).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
       args[key] = argv[++i];
@@ -87,6 +113,7 @@ function preflight(kind) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  if (args.noColor) setColorEnabled(false);
   const cmd = args._[0];
   const sub = args._[1];
 
@@ -187,8 +214,7 @@ async function main() {
           break;
         }
         if (sub === "status") {
-          const r = adapterStatus({ cwd: process.cwd(), adapters: args.adapters });
-          console.log(JSON.stringify(r, null, 2));
+          emit(args, adapterStatus({ cwd: process.cwd(), adapters: args.adapters }), render.renderAdapterStatus);
           break;
         }
         throw new Error("Usage: cto-brain adapter list|pick|wire|status");
@@ -257,15 +283,12 @@ async function main() {
       }
       case "router": {
         if (sub === "list") {
-          const rows = await routerList();
-          for (const r of rows) {
-            console.log(`${r.id}\t${r.tier}\t${r.label}${r.stub ? " (stub)" : ""}`);
-          }
+          emit(args, await routerList(), render.renderRouterList);
           break;
         }
         if (sub === "probe") {
           const r = await routerProbe({ cwd: process.cwd(), all: !!args.all });
-          console.log(JSON.stringify(r.report, null, 2));
+          emit(args, r.report, render.renderProbe);
           break;
         }
         if (sub === "select") {
@@ -275,7 +298,7 @@ async function main() {
             task: args.task || args._[2],
             prefer: args.prefer,
           });
-          console.log(JSON.stringify(r, null, 2));
+          emit(args, r, render.renderRouterSelect);
           break;
         }
         if (sub === "init") {
@@ -300,8 +323,7 @@ async function main() {
       }
       case "stack": {
         if (sub === "status") {
-          const r = await stackStatus({ cwd: process.cwd() });
-          console.log(JSON.stringify(r, null, 2));
+          emit(args, await stackStatus({ cwd: process.cwd() }), render.renderStackStatus);
           break;
         }
         throw new Error("Usage: cto-brain stack status");
@@ -312,17 +334,17 @@ async function main() {
       }
       case "telemetry": {
         if (sub !== "summary") throw new Error("Usage: cto-brain telemetry summary");
-        console.log(JSON.stringify(telemetrySummarize(), null, 2));
+        emit(args, telemetrySummarize(), render.renderTelemetry);
         break;
       }
       case "eval": {
-        const r = runEval();
-        console.log(JSON.stringify({ ...r, generated: new Date().toISOString() }, null, 2));
+        const r = { ...runEval(), generated: new Date().toISOString() };
+        emit(args, r, render.renderEval);
         if (r.failed > 0) process.exit(1);
         break;
       }
       default:
-        console.log(USAGE);
+        console.log(usage());
         process.exit(cmd ? 1 : 0);
     }
   } catch (err) {
