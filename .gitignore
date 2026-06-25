@@ -6,3 +6,7 @@ cto-brain-*.tgz
 .DS_Store
 .auto-sync.log
 .cto-brain/
+# Wired adapter skill dirs are DERIVED copies of skills/ — never commit them.
+.claude/
+.cursor/
+.agents/
