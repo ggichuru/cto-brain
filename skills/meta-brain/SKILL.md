@@ -95,6 +95,20 @@ brain. Versioned. Keep it in sync when skills are added or removed.
 | `cto-brain router` | Policy-first model + stack routing (local Ollama/vLLM vs cloud APIs). CLI: `router list`, `router probe`, `router select --task <kind>`, `stack status`. | Pre-dispatch probe; pick runtime per builder vs reviewer lane; connect to already-running Desk engine / Ollama stacks. |
 | `schedule` | Cron-like scheduling for skills that should fire on their own cadence. | Setting up the maintenance trio to auto-fire. Background ops. |
 
+### IC disciplines (model-invoked, inner-loop)
+
+The inner-loop disciplines a single agent fires while building — bundled with
+cto-brain, credited to `mattpocock/skills`. They are **model-invoked**: a
+user-invoked workflow (e.g. `cto-orchestration`) may call them; they never call
+a user-invoked skill (see "Skill invocation classes").
+
+| Skill | Purpose | Fire when |
+|---|---|---|
+| `grill` | Structured interview to surface real scope before building. | Before decomposing anything non-trivial; when a request is vague or likely to grow. (Front end of CTO Role 1.) |
+| `tdd` | Red-green-refactor against a fast feedback loop. | Building/changing logic with a definable correct answer; every bug fix's regression test. |
+| `diagnosing-bugs` | Reproduce → minimize → hypothesize → instrument → fix → regression-test. | Anything broken whose cause isn't obvious. Read the FIRST error, not the last. |
+| `domain-modeling` | Build + maintain `CONTEXT.md` shared vocabulary. | Start of a build; when a concept gets re-explained; when a load-bearing noun appears. |
+
 ### Domain skills (project- or topic-specific)
 
 | Skill | Domain | Fire when |

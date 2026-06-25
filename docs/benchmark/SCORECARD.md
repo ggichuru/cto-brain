@@ -4,7 +4,7 @@
 **cto-brain version:** 0.9.0 (npm latest: 0.2.0 — publish pending)  
 **Method:** `npm run benchmark` (or `node scripts/benchmark-self.mjs`), `npm test`, `cto-brain eval`, `npm view` on public packages.
 
-**Live re-measurement (v0.9.0, Node 22), reproduced by `node scripts/benchmark-self.mjs` + `cto-brain eval`:** eval **13/13** (routing 7/7 · honesty 2/2 · gate 4/4); tarball **151.5 kB**, unpacked **427.5 kB** (72 files), **1** runtime dep; **20** CLI commands, **4** skills, **5** adapters; **21** test suites / **323** runtime assertions; `router probe` **145 ms**, `gate check` **138 ms**. Every per-cell table below is refreshed to these v0.9.0 numbers.
+**Live re-measurement (v0.9.0, Node 22), reproduced by `node scripts/benchmark-self.mjs` + `cto-brain eval`:** eval **13/13** (routing 7/7 · honesty 2/2 · gate 4/4); tarball **151.5 kB**, unpacked **427.5 kB** (72 files), **1** runtime dep; **20** CLI commands, **8** skills, **5** adapters; **21** test suites / **323** runtime assertions; `router probe` **145 ms**, `gate check` **138 ms**. Every per-cell table below is refreshed to these v0.9.0 numbers.
 
 ---
 
@@ -46,7 +46,7 @@ renderer, and docs landed — `node_modules` is never published (`files` allowli
 | Provider presets | **10** |
 | MCP tools (stdio) | **9** |
 | Platform adapters | **5** (Claude Code, Cursor, Codex, OpenCode, generic) |
-| Bundled skills | **4** |
+| Bundled skills | **8** (cto-orchestration, meta-brain, agentic-learning-loop, multi-agent-execution, grill, tdd, diagnosing-bugs, domain-modeling) |
 | Skill LOC (all `skills/*/SKILL.md`) | **3,367** |
 | `src/` LOC | **3,311** |
 | Reviewer briefs | **3** (security-audit, devils-advocate, tech-lead) |

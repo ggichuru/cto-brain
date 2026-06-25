@@ -37,7 +37,11 @@
       "./skills/cto-orchestration",
       "./skills/meta-brain",
       "./skills/agentic-learning-loop",
-      "./skills/multi-agent-execution"
+      "./skills/multi-agent-execution",
+      "./skills/grill",
+      "./skills/tdd",
+      "./skills/diagnosing-bugs",
+      "./skills/domain-modeling"
     ]
   },
   "scripts": {
