@@ -20,7 +20,7 @@ for (const t of TOOLS) {
 }
 
 const names = TOOLS.map((t) => t.name);
-for (const expected of ["router_select", "router_plan", "router_probe", "stack_status", "gate_check", "adapter_status", "round_close"]) {
+for (const expected of ["router_select", "router_plan", "router_probe", "stack_status", "gate_check", "adapter_status", "eval_run", "round_close"]) {
   ok(`tool present: ${expected}`, names.includes(expected));
 }
 

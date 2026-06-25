@@ -36,8 +36,14 @@ export async function probeConfiguredAndDiscovered(opts = {}) {
   }
 
   let providerPresets = PROVIDER_PRESETS;
+  // Honor the operator's enabledProviders allowlist when set, so probing
+  // doesn't keep hitting stacks the operator has explicitly disabled.
+  if (Array.isArray(config.enabledProviders) && config.enabledProviders.length) {
+    const enabled = new Set(config.enabledProviders);
+    providerPresets = providerPresets.filter((p) => enabled.has(p.id));
+  }
   if (!opts.all) {
-    providerPresets = PROVIDER_PRESETS.filter((p) => p.tier === "local" || p.id === "desk-engine");
+    providerPresets = providerPresets.filter((p) => p.tier === "local");
   }
 
   const providerResults = await probeAll(providerPresets, { env, timeoutMs: opts.timeoutMs });

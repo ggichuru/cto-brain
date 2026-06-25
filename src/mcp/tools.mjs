@@ -11,6 +11,7 @@ import { roundClose } from "../cli/round-close.mjs";
 import { gateCheck } from "../gate/pack.mjs";
 import { systemBrainHome } from "../paths.mjs";
 import { recordEvent } from "../telemetry/recorder.mjs";
+import { runEval } from "../eval/runner.mjs";
 
 const PREFER_ENUM = ["auto", "local", "cloud"];
 
@@ -80,6 +81,13 @@ export const TOOLS = [
       properties: { adapters: { type: "string", description: "Comma-separated adapter ids to limit to." } },
     },
     handler: (args) => adapterStatus({ cwd: process.cwd(), adapters: args.adapters }),
+  },
+  {
+    name: "eval_run",
+    description:
+      "Run the cto-brain eval suite (router-selection, honesty, and gate correctness) and return the scorecard. Read-only.",
+    inputSchema: { type: "object", properties: {} },
+    handler: () => runEval(),
   },
   {
     name: "round_close",

@@ -1,6 +1,6 @@
 {
   "name": "cto-brain",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Portable CTO orchestration brain — skills, sync, gating, and agent adapters for multi-agent builds",
   "type": "module",
   "bin": {
@@ -41,9 +41,9 @@
     ]
   },
   "scripts": {
-    "test": "node test/skills-valid.mjs && node test/sync-idempotent.mjs && node test/gate-no-secrets.mjs && node test/cli-init.mjs && node test/adapter-pick.mjs && node test/router-providers.mjs && node test/router-select.mjs && node test/router-probe.mjs && node test/router-config.mjs && node test/router-discover.mjs && node test/router-stack.mjs && node test/router-cli.mjs && node test/mcp-server.mjs && node test/mcp-e2e.mjs && node test/telemetry.mjs",
+    "test": "node test/skills-valid.mjs && node test/sync-idempotent.mjs && node test/gate-no-secrets.mjs && node test/cli-init.mjs && node test/adapter-pick.mjs && node test/router-providers.mjs && node test/router-select.mjs && node test/router-probe.mjs && node test/router-config.mjs && node test/router-discover.mjs && node test/router-stack.mjs && node test/router-cli.mjs && node test/mcp-server.mjs && node test/mcp-e2e.mjs && node test/telemetry.mjs && node test/eval.mjs",
     "doctor": "node bin/cto-brain.mjs doctor",
-    "ci": "node bin/cto-brain.mjs gate check --home . && npm test",
+    "ci": "node bin/cto-brain.mjs gate check --home . && npm test && node bin/cto-brain.mjs eval",
     "benchmark": "node scripts/benchmark-self.mjs",
     "prepublishOnly": "node bin/cto-brain.mjs gate check --home . && npm test"
   },

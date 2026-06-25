@@ -4,7 +4,7 @@ Portable **CTO orchestration brain** for multi-agent builds — auditable policy
 ([agentskills.io](https://agentskills.io)), two-level local sync, cross-platform
 adapters, and hybrid public/encrypted skill packs.
 
-**License:** [MIT](./LICENSE) · **Node:** ≥ 20 · **npm:** [`cto-brain`](https://www.npmjs.com/package/cto-brain) (after publish)
+**License:** [MIT](./LICENSE) · **Node:** ≥ 20 · **npm:** [`cto-brain`](https://www.npmjs.com/package/cto-brain) · **Zero runtime deps** except the MCP SDK
 
 [![ci](https://github.com/ggichuru/cto-brain/actions/workflows/ci.yml/badge.svg)](https://github.com/ggichuru/cto-brain/actions/workflows/ci.yml)
 
@@ -44,6 +44,8 @@ Bundled core skills:
 | [docs/ENCRYPTED-PACKS.md](docs/ENCRYPTED-PACKS.md) | Public / signed / encrypted skill tiers |
 | [docs/benchmark/](docs/benchmark/README.md) | vs 14 peers — methodology + scorecard |
 | [docs/PUBLISH.md](docs/PUBLISH.md) | npm publish + 2FA gate |
+| [docs/MCP.md](docs/MCP.md) | Run cto-brain as an MCP server; register in Claude/Cursor/Codex |
+| [docs/EVAL.md](docs/EVAL.md) | Eval harness — scoring the brain's routing/honesty/gate decisions |
 | [docs/POSITIONING.md](docs/POSITIONING.md) | Where cto-brain sits in the 2026 agent stack (control plane vs runtime) |
 | [docs/GROWTH-AGENT-BRIEF.md](docs/GROWTH-AGENT-BRIEF.md) | Brief for an agent tasked with growing/architecting/stewarding cto-brain |
 | [docs/AGENT-SYSTEM-PROMPT.md](docs/AGENT-SYSTEM-PROMPT.md) | Self-contained, tool-verified system prompt for a no-repo-access steward agent |
@@ -86,6 +88,7 @@ cto-brain sync --promote
 | `stack status` | Probe configured stacks (Desk, Ollama, …) |
 | `mcp` | Run cto-brain as an MCP server (stdio) — see [docs/MCP.md](docs/MCP.md) |
 | `telemetry summary` | KPIs from local run telemetry (fallback rate, per-task providers, latency) |
+| `eval` | Score the brain's own routing/honesty/gate decisions ([docs/EVAL.md](docs/EVAL.md)) |
 | `hook install` | Stop-hook script for post-turn project sync |
 
 Routing decisions and MCP tool calls are logged **locally only** to
@@ -110,7 +113,7 @@ Add to `package.json` for auto-sync on install:
 
 ```json
 {
-  "devDependencies": { "cto-brain": "^0.2.0" },
+  "devDependencies": { "cto-brain": "^0.3.0" },
   "scripts": {
     "prepare": "cto-brain sync --project-only || true"
   }
@@ -126,9 +129,14 @@ Compatible with [agentskills.io](https://agentskills.io) and [skills-npm](https:
 - **Before publish:** `cto-brain gate check --home .` and `npm test` (also run via `prepublishOnly`).
 - **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) · **Security:** [SECURITY.md](SECURITY.md)
 
-## vs Fugu / Fable orchestrators
+## Where it sits (vs Fugu, vs Fable/Mythos)
 
-Fugu and Fable tools optimize **which model runs**. CTO Brain optimizes **how humans + agents ship** — frozen contracts, single integrating commit, reviewer trio, growth ledger, lead-CTO portfolio. Policy-first, auditable, local-first.
+The 2026 landscape splits on one axis — *orchestrate-many-models* vs *one-big-agentic-model*:
+
+- **Sakana Fugu** orchestrates a swappable pool of frontier LLMs behind one endpoint (a learned Conductor/TRINITY) — but routing is model-decided and **opaque**.
+- **Claude Fable 5 / Mythos 5** are single Mythos-class **models** — capable, but single-vendor (both were export-suspended worldwide on 2026-06-12).
+
+**cto-brain is neither — it's the policy layer *above* either.** It optimizes *how humans + agents ship*: **auditable** task→provider routing, honest fallback, frozen contracts, reviewer trio, single integrating commit, growth-ledger learning, and a security gate — provider-agnostic and local-first, so a single-vendor outage just reroutes. See [docs/POSITIONING.md](docs/POSITIONING.md) and [docs/research/agentic-orchestration-2026.md](docs/research/agentic-orchestration-2026.md).
 
 ## Model router
 
