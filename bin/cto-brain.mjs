@@ -50,7 +50,7 @@ function usage() {
       ["stack status", "Configured-stack reachability"],
     ]],
     ["Serve, measure & ship", [
-      ["code [<model>|--model <m>|--task <kind>] [-- <codex args>]", "Coding terminal on local models (picker + codex)"],
+      ["code [<model>|--task <kind>|--model <m>] [--backend opencode|codex|aider]", "Sovereign local-model coding terminal (opencode + cto-brain wired in)"],
       ["mcp [--transport=http] [--port N] [--allow-origin <o>]", "Run as an MCP server (stdio default, or HTTP)"],
       ["gateway [--port N] [--jarvis-base URL]", "Local OpenAI→Ollama bridge to jarvis (loopback)"],
       ["agent-card [--out <path>]", "Emit the A2A agent card (discovery)"],
