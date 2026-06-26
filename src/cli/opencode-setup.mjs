@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { tagModel, pickByTask } from "../router/capabilities.mjs";
+import { tagModel, pickByTask, pickToolModel } from "../router/capabilities.mjs";
 
 export function opencodeConfigDir() {
   const base = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
@@ -98,7 +98,9 @@ export function buildOpencodeConfig(models, { baseUrl = "http://127.0.0.1:11434/
     const suffix = t.capability === "vision" ? ", vision" : "";
     modelsMap[id] = { name: `${id} (local${suffix})` };
   }
-  const best = pickByTask(chat, "dispatch-builder") || chat[0];
+  // Default to a TOOL-CAPABLE model — opencode is agentic (every action is a
+  // tool call), so a coder that prints tool calls as text can't drive it.
+  const best = pickToolModel(chat, "dispatch-builder") || pickByTask(chat, "dispatch-builder") || chat[0];
   return {
     $schema: "https://opencode.ai/config.json",
     instructions: ["~/.config/opencode/cto-brain.md"],

@@ -14,7 +14,7 @@
 // aider (--backend aider, if installed). cto-brain stays backend-agnostic.
 
 import { spawn } from "node:child_process";
-import { tagModel, pickByTask } from "../router/capabilities.mjs";
+import { tagModel, pickByTask, toolCapable, pickToolModel } from "../router/capabilities.mjs";
 import { selectFromMenu, dim, green, sym } from "./ui.mjs";
 import { ensureOpencodeWiring } from "./opencode-setup.mjs";
 
@@ -59,27 +59,39 @@ function orderForPicker(models) {
   );
 }
 
+function warnIfNoTools(model, toolsRequired) {
+  if (toolsRequired && !toolCapable(model)) {
+    process.stderr.write(`${sym.warn()} ${dim(model + " emits tool calls as text (no structured tool_calls) — agent actions may not execute. Prefer a *-instruct / llama3.1 model.")}\n`);
+  }
+}
+
 // Resolve a bare ollama model id: flag → positional name → task capability →
-// interactive picker (coder default). `local` positional = quick best-coder.
-async function resolveModel(opts, models) {
-  if (opts.model) return opts.model.replace(/^ollama\//, "");
+// interactive picker. When toolsRequired (agentic backends like opencode), pick
+// among TOOL-CAPABLE models — a coder model that prints tool calls as text
+// can't drive the agent loop. `local` = quick capable builder model.
+async function resolveModel(opts, models, toolsRequired = false) {
+  const pick = (task) => (toolsRequired ? (pickToolModel(models, task) || pickByTask(models, task)) : pickByTask(models, task));
+  if (opts.model) { const m = opts.model.replace(/^ollama\//, ""); warnIfNoTools(m, toolsRequired); return m; }
   if (opts.positional && opts.positional !== "local" && models.includes(opts.positional)) {
-    return opts.positional;
+    warnIfNoTools(opts.positional, toolsRequired); return opts.positional;
   }
   if (opts.task) {
-    const m = pickByTask(models, opts.task);
+    const m = pick(opts.task);
     if (m) { process.stderr.write(`${sym.arrow()} ${dim("task")} ${opts.task} ${dim("→")} ${green(m)}\n`); return m; }
   }
   if (opts.positional === "local") {
-    const m = pickByTask(models, "dispatch-builder");
+    const m = pick("dispatch-builder");
     if (m) { process.stderr.write(`${sym.arrow()} ${dim("local →")} ${green(m)}\n`); return m; }
   }
   const items = orderForPicker(models).map((id) => {
     const t = tagModel(id);
-    return { label: id, value: id, hint: `${t.capability} · ${t.size}` };
+    const noTools = toolsRequired && !toolCapable(id) ? " · no tools" : "";
+    return { label: id, value: id, hint: `${t.capability} · ${t.size}${noTools}` };
   });
-  const defaultIndex = Math.max(0, items.findIndex((it) => tagModel(it.value).capability === "coder"));
-  return selectFromMenu("Pick a local model", items, { defaultIndex });
+  const defaultIndex = Math.max(0, items.findIndex((it) =>
+    toolsRequired ? toolCapable(it.value) : tagModel(it.value).capability === "coder"));
+  const title = toolsRequired ? "Pick a local model (tool-capable recommended)" : "Pick a local model";
+  return selectFromMenu(title, items, { defaultIndex });
 }
 
 function run(cmd, args) {
@@ -146,7 +158,7 @@ export async function launchCode(argv) {
     return 1;
   }
 
-  const model = await resolveModel(opts, models);
+  const model = await resolveModel(opts, models, backend === "opencode");
   if (!model) { process.stderr.write(`${sym.bad()} no model selected.\n`); return 1; }
 
   if (backend === "codex") return launchCodex(model, opts);

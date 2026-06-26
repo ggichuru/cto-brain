@@ -131,3 +131,48 @@ export function pickByTask(models, task) {
   // Fallback: first chat model in discovery order.
   return chat[0].id;
 }
+
+/**
+ * Does this model emit STRUCTURED tool/function calls over ollama's
+ * OpenAI-compatible endpoint? Agentic terminals (opencode) need this — a model
+ * that prints the call as text instead of `tool_calls` can't drive the loop.
+ *
+ * Verified on this box (ollama 0.30.10): qwen2.5:7b-instruct → structured ✓;
+ * qwen2.5-coder:14b → text ✗. Heuristic (conservative — unknown → false):
+ * coder templates and the gemma + vision families don't emit structured calls;
+ * qwen2.5 (non-coder), llama3.1/3.3, mistral, and generic -instruct do.
+ */
+export function toolCapable(id) {
+  const l = String(id || "").toLowerCase();
+  if (!tagModel(id).chat) return false;
+  if (l.includes("coder")) return false;
+  if (l.includes("vl") || l.includes("vision")) return false;
+  if (l.includes("gemma")) return false; // gemma family lacks an ollama tools template
+  if (l.includes("qwen2.5") || l.includes("qwen3")) return true;
+  if (l.includes("llama3.1") || l.includes("llama-3.1") || l.includes("llama3.3")) return true;
+  if (l.includes("mistral") || l.includes("hermes") || l.includes("-instruct")) return true;
+  return false;
+}
+
+/**
+ * Pick the best TOOL-CAPABLE model for a task (for agentic backends). Reasoner
+ * tasks → largest capable; builder/explore/default → a fast capable instruct
+ * (prefer qwen2.5 *-instruct, smallest-first). Returns null if none capable.
+ */
+export function pickToolModel(models, task) {
+  const capable = withTags((models || []).filter(toolCapable));
+  if (!capable.length) return null;
+  const t = String(task || "").toLowerCase();
+  const isReasoner =
+    t.includes("review") || t.includes("integrate") || t.includes("research") || t === "reasoning";
+  if (isReasoner) return [...capable].sort(bySizeDesc)[0].id;
+  const qwen = capable.filter((m) => m.id.toLowerCase().includes("qwen2.5"));
+  const pool = qwen.length ? qwen : capable;
+  pool.sort((a, b) => {
+    const ai = a.id.toLowerCase().includes("instruct") ? 0 : 1;
+    const bi = b.id.toLowerCase().includes("instruct") ? 0 : 1;
+    if (ai !== bi) return ai - bi;
+    return SIZE_RANK[a.tag.size] - SIZE_RANK[b.tag.size];
+  });
+  return pool[0].id;
+}
