@@ -119,6 +119,44 @@ export function buildOpencodeConfig(models, { baseUrl = "http://127.0.0.1:11434/
   };
 }
 
+// cto-brain coding discipline for aider (which has no MCP — gets the prompt as a
+// read-only convention file). Accurate for an edit-format coder: no MCP claims.
+const AIDER_CONVENTIONS = `# cto-brain coding conventions
+
+You code under the cto-brain discipline on local, sovereign models (no cloud,
+nothing leaves the machine).
+
+- Verify, don't guess. Reproduce a bug before fixing it; read the FIRST error in
+  a chain, not the last. Lock fixes with a test.
+- Keep changes scoped to exactly what was asked. Don't gold-plate; don't
+  half-finish. Prefer the smallest correct, reviewable diff.
+- Match the existing code's style, naming, and structure.
+- No AI/agent attribution in code, comments, commits, or messages — ever.
+`;
+
+// Wire cto-brain into aider (no MCP support → a --read convention file). Returns
+// the conventions path for the launcher to pass via `aider --read <path>`.
+export function ensureAiderConventions({ force = false } = {}) {
+  const p = path.join(os.homedir(), ".config", "cto-brain", "CONVENTIONS.md");
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  if (force || !fs.existsSync(p)) fs.writeFileSync(p, AIDER_CONVENTIONS);
+  return p;
+}
+
+// Wire the cto-brain MCP server into codex (~/.codex/config.toml). Idempotent —
+// appends [mcp_servers.cto-brain] if absent. Codex loads it on launch.
+export function ensureCodexMcp() {
+  const cfg = path.join(os.homedir(), ".codex", "config.toml");
+  let toml = "";
+  try { toml = fs.readFileSync(cfg, "utf8"); } catch { /* no config yet */ }
+  if (/\[mcp_servers\.cto-brain\]/.test(toml)) return { wired: true, added: false };
+  const bin = ctoBrainBin();
+  const block = `\n[mcp_servers.cto-brain]\ncommand = ${JSON.stringify(bin)}\nargs = ["mcp"]\n`;
+  fs.mkdirSync(path.dirname(cfg), { recursive: true });
+  fs.appendFileSync(cfg, (toml && !toml.endsWith("\n") ? "\n" : "") + block);
+  return { wired: true, added: true };
+}
+
 // Returns true if an existing config already wires the ollama provider + cto-brain MCP.
 function isWired(cfgPath) {
   try {

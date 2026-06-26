@@ -16,7 +16,7 @@
 import { spawn } from "node:child_process";
 import { tagModel, pickByTask, toolCapable, pickToolModel } from "../router/capabilities.mjs";
 import { selectFromMenu, dim, green, sym } from "./ui.mjs";
-import { ensureOpencodeWiring } from "./opencode-setup.mjs";
+import { ensureOpencodeWiring, ensureAiderConventions, ensureCodexMcp } from "./opencode-setup.mjs";
 
 const OLLAMA_HOST = (process.env.OLLAMA_HOST || "http://127.0.0.1:11434").replace(/\/+$/, "");
 
@@ -139,16 +139,18 @@ async function launchOpencode(model, opts) {
 }
 
 async function launchCodex(model, opts) {
-  process.stderr.write(`${sym.arrow()} codex on ${green(model)} ${dim("(local Ollama via --oss)")}\n`);
+  const w = ensureCodexMcp(); // cto-brain MCP inbuilt by default
+  process.stderr.write(`${sym.arrow()} codex on ${green(model)} ${dim("(local Ollama via --oss · cto-brain MCP " + (w.added ? "wired" : "ready") + ")")}\n`);
   const code = await run("codex", ["--oss", "--local-provider", "ollama", "-m", model, ...opts.passthrough]);
   if (code === 127) process.stderr.write(`  install codex, or use the default ${dim("opencode")} backend\n`);
   return code;
 }
 
 async function launchAider(model, opts) {
-  process.stderr.write(`${sym.arrow()} aider on ${green(model)} ${dim("(local Ollama)")}\n`);
+  const conv = ensureAiderConventions(); // cto-brain coding discipline (aider has no MCP)
+  process.stderr.write(`${sym.arrow()} aider on ${green(model)} ${dim("(local Ollama · cto-brain conventions)")}\n`);
   const env = { ...process.env, OLLAMA_API_BASE: OLLAMA_HOST };
-  const child = spawn("aider", ["--model", `ollama_chat/${model}`, ...opts.passthrough], { stdio: "inherit", env });
+  const child = spawn("aider", ["--model", `ollama_chat/${model}`, "--read", conv, ...opts.passthrough], { stdio: "inherit", env });
   return new Promise((resolve) => {
     child.on("exit", (c) => resolve(c ?? 0));
     child.on("error", () => { process.stderr.write(`${sym.bad()} aider not found. install: ${dim("uv tool install aider-chat")}\n`); resolve(127); });
