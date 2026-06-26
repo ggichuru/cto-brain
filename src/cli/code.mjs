@@ -60,8 +60,12 @@ function orderForPicker(models) {
 }
 
 function warnIfNoTools(model, toolsRequired) {
-  if (toolsRequired && !toolCapable(model)) {
-    process.stderr.write(`${sym.warn()} ${dim(model + " emits tool calls as text (no structured tool_calls) — agent actions may not execute. Prefer a *-instruct / llama3.1 model.")}\n`);
+  if (!toolsRequired) return;
+  if (!toolCapable(model)) {
+    process.stderr.write(`${sym.warn()} ${dim(model + " emits tool calls as text (no structured tool_calls) — agent actions may not execute. Prefer a *-instruct model.")}\n`);
+  }
+  if (tagModel(model).size === "large") {
+    process.stderr.write(`${sym.warn()} ${dim(model + " is large — on local hardware it can run CPU-bound and respond very slowly (no response). Prefer a 7b/instruct model for interactive use.")}\n`);
   }
 }
 
@@ -70,7 +74,12 @@ function warnIfNoTools(model, toolsRequired) {
 // among TOOL-CAPABLE models — a coder model that prints tool calls as text
 // can't drive the agent loop. `local` = quick capable builder model.
 async function resolveModel(opts, models, toolsRequired = false) {
-  const pick = (task) => (toolsRequired ? (pickToolModel(models, task) || pickByTask(models, task)) : pickByTask(models, task));
+  // Interactive (toolsRequired) caps at "mid" tier — large models run CPU-bound
+  // and unusably slow on local hardware. 70b only via explicit --model.
+  const pick = (task) =>
+    toolsRequired
+      ? (pickToolModel(models, task, { maxTier: "mid" }) || pickToolModel(models, task) || pickByTask(models, task))
+      : pickByTask(models, task);
   if (opts.model) { const m = opts.model.replace(/^ollama\//, ""); warnIfNoTools(m, toolsRequired); return m; }
   if (opts.positional && opts.positional !== "local" && models.includes(opts.positional)) {
     warnIfNoTools(opts.positional, toolsRequired); return opts.positional;
@@ -86,10 +95,15 @@ async function resolveModel(opts, models, toolsRequired = false) {
   const items = orderForPicker(models).map((id) => {
     const t = tagModel(id);
     const noTools = toolsRequired && !toolCapable(id) ? " · no tools" : "";
-    return { label: id, value: id, hint: `${t.capability} · ${t.size}${noTools}` };
+    const slow = toolsRequired && t.size === "large" ? " · slow/CPU" : "";
+    return { label: id, value: id, hint: `${t.capability} · ${t.size}${noTools}${slow}` };
   });
-  const defaultIndex = Math.max(0, items.findIndex((it) =>
-    toolsRequired ? toolCapable(it.value) : tagModel(it.value).capability === "coder"));
+  // Default to a responsive tool-capable model (not large/CPU-bound) for opencode.
+  let defaultIndex = toolsRequired
+    ? items.findIndex((it) => toolCapable(it.value) && tagModel(it.value).size !== "large")
+    : items.findIndex((it) => tagModel(it.value).capability === "coder");
+  if (defaultIndex < 0) defaultIndex = toolsRequired ? items.findIndex((it) => toolCapable(it.value)) : 0;
+  if (defaultIndex < 0) defaultIndex = 0;
   const title = toolsRequired ? "Pick a local model (tool-capable recommended)" : "Pick a local model";
   return selectFromMenu(title, items, { defaultIndex });
 }

@@ -159,8 +159,16 @@ export function toolCapable(id) {
  * tasks → largest capable; builder/explore/default → a fast capable instruct
  * (prefer qwen2.5 *-instruct, smallest-first). Returns null if none capable.
  */
-export function pickToolModel(models, task) {
-  const capable = withTags((models || []).filter(toolCapable));
+export function pickToolModel(models, task, opts = {}) {
+  let capable = withTags((models || []).filter(toolCapable));
+  // For interactive use, cap the size — a model that doesn't fit the GPU runs
+  // CPU-bound and is unusably slow (e.g. llama3.1:70b at 78% CPU on a GB10).
+  // Only narrow if something responsive remains.
+  if (opts.maxTier) {
+    const cap = SIZE_RANK[opts.maxTier] ?? 3;
+    const responsive = capable.filter((m) => SIZE_RANK[m.tag.size] <= cap);
+    if (responsive.length) capable = responsive;
+  }
   if (!capable.length) return null;
   const t = String(task || "").toLowerCase();
   const isReasoner =
