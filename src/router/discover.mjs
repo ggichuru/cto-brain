@@ -42,5 +42,17 @@ export async function discoverLocal(opts = {}) {
     }
   }
 
+  // jarvis sovereign gateway — remote, key-gated. Only probed when its key is
+  // present; probeProvider skips gracefully (status "down", no throw) otherwise.
+  if (env.JARVIS_API_KEY) {
+    const preset = PROVIDER_PRESETS.find((p) => p.id === "jarvis");
+    if (preset) {
+      const r = await probeProvider(preset, { ...opts, env });
+      if (r.reachable && !found.some((f) => f.id === "jarvis")) {
+        found.push({ ...r, discovered: true, source: "JARVIS_API_KEY" });
+      }
+    }
+  }
+
   return found;
 }

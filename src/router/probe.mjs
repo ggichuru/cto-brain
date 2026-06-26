@@ -1,11 +1,14 @@
 import net from "node:net";
-import { getProvider, resolveBaseUrl } from "./providers.mjs";
+import { getProvider, resolveBaseUrl, apiKeyEnvName, hasApiKey } from "./providers.mjs";
 
 const DEFAULT_TIMEOUT_MS = 2000;
 
-async function fetchJson(url, timeoutMs = DEFAULT_TIMEOUT_MS) {
+async function fetchJson(url, timeoutMs = DEFAULT_TIMEOUT_MS, headers = undefined) {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(timeoutMs),
+      ...(headers ? { headers } : {}),
+    });
     const text = await res.text();
     let json = null;
     try {
@@ -54,9 +57,9 @@ export async function probeProvider(preset, opts = {}) {
     return result;
   }
 
-  if (preset.keyRequired && !env[preset.envKey] && !(preset.altEnvKeys || []).some((k) => env[k])) {
+  if (preset.keyRequired && !hasApiKey(preset, env)) {
     result.status = "down";
-    result.reason = `No API key (${preset.envKey}) — configure BYOC or pick a local runtime.`;
+    result.reason = `No API key (${apiKeyEnvName(preset)}) — configure BYOC or pick a local runtime.`;
     return result;
   }
 
@@ -75,7 +78,8 @@ export async function probeProvider(preset, opts = {}) {
 
   if (preset.probePath) {
     const probeUrl = `${baseUrl.replace(/\/+$/, "")}${preset.probePath}`;
-    const r = await fetchJson(probeUrl, opts.timeoutMs);
+    const headers = bearerHeaders(preset, env);
+    const r = await fetchJson(probeUrl, opts.timeoutMs, headers);
     if (r.ok) {
       result.reachable = true;
       result.status = "reachable";
@@ -99,6 +103,21 @@ export async function probeProvider(preset, opts = {}) {
     result.reason = `TCP unreachable on ${u.hostname}:${port}`;
   }
   return result;
+}
+
+/**
+ * Build auth headers for a probe. Key-required openAI-compatible presets
+ * (e.g. jarvis) send `Authorization: Bearer <key>` from their key env. Returns
+ * undefined when no key is available so loopback/local probes stay unchanged.
+ */
+function bearerHeaders(preset, env) {
+  if (!preset || !preset.keyRequired) return undefined;
+  const keyEnv = apiKeyEnvName(preset);
+  const key = keyEnv ? env[keyEnv] : null;
+  const alt = !key ? (preset.altEnvKeys || []).map((k) => env[k]).find(Boolean) : null;
+  const token = key || alt;
+  if (!token) return undefined;
+  return { Authorization: `Bearer ${token}` };
 }
 
 function extractModels(preset, json) {

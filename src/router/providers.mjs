@@ -105,6 +105,18 @@ export const PROVIDER_PRESETS = [
     probePath: "/health",
     stackType: "desk",
   },
+  {
+    id: "jarvis",
+    label: "jarvis (sovereign gateway)",
+    baseUrl: "https://jarvis.mkulyma.com",
+    envKey: "JARVIS_BASE_URL",
+    apiKeyEnv: "JARVIS_API_KEY",
+    defaultModel: "qwen2.5-coder:14b",
+    tier: "local",
+    probePath: "/api/models",
+    openAiCompatible: true,
+    keyRequired: true,
+  },
 ];
 
 export function getProvider(id) {
@@ -130,14 +142,31 @@ export function resolveBaseUrl(preset, env = process.env) {
   return preset.baseUrl;
 }
 
+/**
+ * Resolve the env var name that holds the API key for a preset. Most presets
+ * carry the key in `envKey`; presets whose `envKey` is a base-URL override
+ * (e.g. jarvis: envKey=JARVIS_BASE_URL) declare the key in `apiKeyEnv`.
+ */
+export function apiKeyEnvName(preset) {
+  if (!preset) return null;
+  return preset.apiKeyEnv || preset.envKey || null;
+}
+
+/** True when the API key env (or any alt) is set in env. */
+export function hasApiKey(preset, env = process.env) {
+  if (!preset) return false;
+  const keyEnv = apiKeyEnvName(preset);
+  if (keyEnv && env[keyEnv]) return true;
+  for (const k of preset.altEnvKeys || []) {
+    if (env[k]) return true;
+  }
+  return false;
+}
+
 export function hasCloudCredential(preset, env = process.env) {
   if (!preset || preset.stub) return false;
   if (preset.keyRequired) {
-    if (env[preset.envKey]) return true;
-    for (const k of preset.altEnvKeys || []) {
-      if (env[k]) return true;
-    }
-    return false;
+    return hasApiKey(preset, env);
   }
   return preset.tier === "cloud";
 }

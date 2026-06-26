@@ -69,6 +69,38 @@ export function kv(pairs, indent = 2) {
     .join("\n");
 }
 
+// Interactive single-choice picker. Zero-dependency (node:readline).
+// items: [{ label, value, hint? }]. Returns the chosen item's `value`.
+// Non-interactive (piped stdin/stdout) → returns the default without prompting,
+// so scripts and CI stay deterministic. (Arrow-key navigation is a Phase-1
+// polish; a numbered menu is robust and dependency-free.)
+export async function selectFromMenu(title, items, { defaultIndex = 0 } = {}) {
+  if (!items || items.length === 0) return undefined;
+  const di = Math.min(Math.max(0, defaultIndex), items.length - 1);
+  if (!process.stdin.isTTY || !process.stdout.isTTY) return items[di].value;
+
+  const { createInterface } = await import("node:readline");
+  process.stdout.write(`\n${heading(title)}\n`);
+  items.forEach((it, i) => {
+    const marker = i === di ? sym.arrow() : " ";
+    const hint = it.hint ? "  " + gray(it.hint) : "";
+    process.stdout.write(`  ${marker} ${bold(String(i + 1))}. ${it.label}${hint}\n`);
+  });
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const ask = (q) => new Promise((res) => rl.question(q, res));
+  try {
+    for (;;) {
+      const ans = (await ask(`\n${sym.arrow()} pick [1-${items.length}] (default ${di + 1}): `)).trim();
+      if (ans === "") return items[di].value;
+      const n = Number(ans);
+      if (Number.isInteger(n) && n >= 1 && n <= items.length) return items[n - 1].value;
+      process.stdout.write(`  ${red(`enter a number 1-${items.length}`)}\n`);
+    }
+  } finally {
+    rl.close();
+  }
+}
+
 // Simple left-aligned table. headers: [string]; rows: [[cell,...]].
 export function table(headers, rows, indent = 2) {
   const cols = headers.length;
