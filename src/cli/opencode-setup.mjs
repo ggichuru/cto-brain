@@ -14,7 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { tagModel, pickByTask, pickToolModel } from "../router/capabilities.mjs";
+import { tagModel, pickByTask, pickToolModel, fitsLocalGpu } from "../router/capabilities.mjs";
 
 export function opencodeConfigDir() {
   const base = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
@@ -91,7 +91,9 @@ Verify, don't guess. No AI/agent attribution anywhere. Telemetry is local only.
 
 // Build the opencode config object from the live local-model roster.
 export function buildOpencodeConfig(models, { baseUrl = "http://127.0.0.1:11434/v1", mcpBin } = {}) {
-  const chat = models.filter((id) => tagModel(id).chat);
+  // Only list GPU-safe models — exclude box-tanking giants (30b+ on GB10 spill to
+  // CPU) so opencode's own model picker can't load one and slow the machine.
+  const chat = models.filter((id) => tagModel(id).chat && fitsLocalGpu(id));
   const modelsMap = {};
   for (const id of chat) {
     const t = tagModel(id);

@@ -72,6 +72,23 @@ export function tagModel(id) {
 
 const SIZE_RANK = { tiny: 0, small: 1, mid: 2, large: 3 };
 
+/** Billions of params from a model id (e.g. "qwen2.5:32b"→32), or null. */
+export function modelParamsB(id) {
+  return paramBillions(paramToken(String(id || "").toLowerCase()));
+}
+
+/**
+ * Will this model stay on the GPU on a unified-memory box (GB10), or spill to
+ * CPU and tank the machine? Models above ~`maxB` billion params (and ollama's
+ * huge default contexts on them) run CPU-bound here. Unknown size → assume safe.
+ * `CTO_MAX_MODEL_B` env overrides the default ceiling.
+ */
+export function fitsLocalGpu(id, maxB) {
+  const ceil = Number(maxB || process.env.CTO_MAX_MODEL_B || 20);
+  const b = modelParamsB(id);
+  return b === null || b <= ceil;
+}
+
 function withTags(models) {
   return (models || [])
     .map((id) => ({ id, tag: tagModel(id) }))
@@ -169,18 +186,28 @@ export function pickToolModel(models, task, opts = {}) {
     const responsive = capable.filter((m) => SIZE_RANK[m.tag.size] <= cap);
     if (responsive.length) capable = responsive;
   }
+  // Hard guardrail: never auto-pick a model that spills to CPU and tanks the box
+  // (unless opts.allowHeavy). Unknown size is treated as safe.
+  if (!opts.allowHeavy) {
+    const gpuSafe = capable.filter((m) => fitsLocalGpu(m.id, opts.maxB));
+    if (gpuSafe.length) capable = gpuSafe;
+  }
   if (!capable.length) return null;
   const t = String(task || "").toLowerCase();
   const isReasoner =
     t.includes("review") || t.includes("integrate") || t.includes("research") || t === "reasoning";
   if (isReasoner) return [...capable].sort(bySizeDesc)[0].id;
-  const qwen = capable.filter((m) => m.id.toLowerCase().includes("qwen2.5"));
+  const qwen = capable.filter((m) => m.id.toLowerCase().includes("qwen2.5") || m.id.toLowerCase().includes("qwen3"));
   const pool = qwen.length ? qwen : capable;
+  // Prefer the LARGEST tool-capable model within the (responsive) cap — quality
+  // wins for a coding terminal; the maxTier cap already excludes CPU-bound giants.
+  // e.g. with qwen2.5:32b present → 32b over 7b; tie-break to an -instruct tag.
   pool.sort((a, b) => {
+    const s = SIZE_RANK[b.tag.size] - SIZE_RANK[a.tag.size];
+    if (s !== 0) return s;
     const ai = a.id.toLowerCase().includes("instruct") ? 0 : 1;
     const bi = b.id.toLowerCase().includes("instruct") ? 0 : 1;
-    if (ai !== bi) return ai - bi;
-    return SIZE_RANK[a.tag.size] - SIZE_RANK[b.tag.size];
+    return ai - bi;
   });
   return pool[0].id;
 }
