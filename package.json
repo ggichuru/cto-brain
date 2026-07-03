@@ -49,7 +49,8 @@
     "doctor": "node bin/cto-brain.mjs doctor",
     "ci": "node bin/cto-brain.mjs gate check --home . && npm test && node bin/cto-brain.mjs eval",
     "benchmark": "node scripts/benchmark-self.mjs",
-    "prepublishOnly": "node bin/cto-brain.mjs gate check --home . && npm test"
+    "prepublishOnly": "node bin/cto-brain.mjs gate check --home . && npm test",
+    "trigger-eval": "node scripts/trigger-eval.mjs"
   },
   "keywords": [
     "agent-skills",
