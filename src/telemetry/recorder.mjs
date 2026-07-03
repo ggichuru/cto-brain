@@ -63,6 +63,12 @@ export function recordEvent(event = {}, home = systemBrainHome()) {
       ...(event.latencyMs != null ? { latencyMs: Math.round(event.latencyMs) } : {}),
       ...(event.source != null ? { source: event.source } : {}),
       ...(event.ok != null ? { ok: !!event.ok } : {}),
+      // outcome accounting: cost-per-outcome is the missing quantitative leg of
+      // the learning loop. `outcome` tags what the spend bought (e.g.
+      // "green-criterion", "merged-pr", "abandoned"); tokens are input/output.
+      ...(event.outcome != null ? { outcome: String(event.outcome) } : {}),
+      ...(Number.isFinite(event.tokensIn) ? { tokensIn: Math.round(event.tokensIn) } : {}),
+      ...(Number.isFinite(event.tokensOut) ? { tokensOut: Math.round(event.tokensOut) } : {}),
     };
     ensureDir(telemetryDir(home));
     rotateIfNeeded(home);
@@ -89,6 +95,11 @@ export function summarize(home = systemBrainHome()) {
     routing: { total: 0, fallbackUsed: 0, fallbackRate: 0, byTaskProvider: {} },
     toolCalls: {},
     latencyMs: { p50: null, p95: null, max: null },
+    // Cost-per-outcome: for each `outcome` tag, how many events and how many
+    // tokens (in/out/total) it took, plus tokensPerOutcome = total/count — the
+    // honest "what did this class of result cost" number. Empty until events
+    // carry outcome + token fields; an empty map is honest (UNPROVEN), not a bug.
+    outcomes: {},
   };
   // Span the rotated backup + the live file so a recent rotation doesn't drop
   // history from the summary. Oldest first.
@@ -114,6 +125,15 @@ export function summarize(home = systemBrainHome()) {
       const byTask = (summary.routing.byTaskProvider[e.task] ||= {});
       byTask[e.provider] = (byTask[e.provider] || 0) + 1;
     }
+    if (e.outcome != null) {
+      const o = (summary.outcomes[e.outcome] ||= { count: 0, tokensIn: 0, tokensOut: 0, tokensTotal: 0 });
+      o.count++;
+      if (Number.isFinite(e.tokensIn)) { o.tokensIn += e.tokensIn; o.tokensTotal += e.tokensIn; }
+      if (Number.isFinite(e.tokensOut)) { o.tokensOut += e.tokensOut; o.tokensTotal += e.tokensOut; }
+    }
+  }
+  for (const o of Object.values(summary.outcomes)) {
+    o.tokensPerOutcome = o.count ? Math.round(o.tokensTotal / o.count) : 0;
   }
   if (summary.routing.total) {
     summary.routing.fallbackRate = +(summary.routing.fallbackUsed / summary.routing.total).toFixed(3);

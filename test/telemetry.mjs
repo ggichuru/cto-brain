@@ -63,6 +63,29 @@ ok("summary spans backup + live (more than live alone)", rs.total > liveLines &&
 delete process.env.CTO_BRAIN_TELEMETRY_MAX_BYTES;
 fs.rmSync(rotHome, { recursive: true, force: true });
 
+// --- cost-per-outcome accounting ---
+const outHome = fs.mkdtempSync(path.join(os.tmpdir(), "ctob-tele-out-"));
+recordEvent({ kind: "autonomous-build", outcome: "green-criterion", tokensIn: 1000, tokensOut: 500 }, outHome);
+recordEvent({ kind: "autonomous-build", outcome: "green-criterion", tokensIn: 2000, tokensOut: 1500 }, outHome);
+recordEvent({ kind: "autonomous-build", outcome: "abandoned", tokensIn: 800, tokensOut: 200 }, outHome);
+recordEvent({ kind: "cli_route", task: "explore", provider: "ollama", latencyMs: 3 }, outHome);
+const os2 = summarize(outHome);
+ok("outcomes map has both tags", Object.keys(os2.outcomes).sort().join(",") === "abandoned,green-criterion");
+ok("green-criterion count=2", os2.outcomes["green-criterion"].count === 2);
+ok("green-criterion tokensTotal=5000", os2.outcomes["green-criterion"].tokensTotal === 5000);
+ok("green-criterion tokensPerOutcome=2500", os2.outcomes["green-criterion"].tokensPerOutcome === 2500);
+ok("abandoned tokensPerOutcome=1000", os2.outcomes["abandoned"].tokensPerOutcome === 1000);
+ok("outcome fields round-trip in the row", (() => {
+  const last = fs.readFileSync(runsPath(outHome), "utf8").trim().split("\n").map((l) => JSON.parse(l)).find((r) => r.outcome === "abandoned");
+  return last && last.tokensIn === 800 && last.tokensOut === 200;
+})());
+ok("no-outcome events stay out of the map", !("undefined" in os2.outcomes));
+const emptyHome = fs.mkdtempSync(path.join(os.tmpdir(), "ctob-tele-empty-"));
+recordEvent({ kind: "cli_route", task: "explore", provider: "ollama", latencyMs: 1 }, emptyHome);
+ok("empty outcomes map is honest, not a crash", JSON.stringify(summarize(emptyHome).outcomes) === "{}");
+fs.rmSync(outHome, { recursive: true, force: true });
+fs.rmSync(emptyHome, { recursive: true, force: true });
+
 fs.rmSync(home, { recursive: true, force: true });
 
 if (failures) { console.error("\n" + failures + " telemetry failure(s)"); process.exit(1); }

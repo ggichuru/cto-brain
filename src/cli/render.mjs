@@ -98,7 +98,12 @@ export function renderTelemetry(s) {
   ]);
   const byKind = Object.entries(s.byKind || {});
   const kinds = byKind.length ? "\n\n" + table(["KIND", "COUNT"], byKind.map(([k, v]) => [k, String(v)])) : "";
-  return `${heading("Telemetry summary")}\n${head}${kinds}`;
+  const outEntries = Object.entries(s.outcomes || {});
+  const outcomes = outEntries.length
+    ? "\n\n" + table(["OUTCOME", "COUNT", "TOKENS/OUTCOME"],
+        outEntries.map(([k, v]) => [k, String(v.count), String(v.tokensPerOutcome ?? 0)]))
+    : "";
+  return `${heading("Telemetry summary")}\n${head}${kinds}${outcomes}`;
 }
 
 export function renderEval(sc) {
