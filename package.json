@@ -1,7 +1,7 @@
 {
   "name": "cto-brain",
   "version": "0.9.1",
-  "description": "Portable CTO orchestration brain — skills, sync, gating, and agent adapters for multi-agent builds",
+  "description": "Portable CTO orchestration brain \u2014 skills, sync, gating, and agent adapters for multi-agent builds",
   "type": "module",
   "bin": {
     "cto-brain": "bin/cto-brain.mjs"
@@ -45,7 +45,7 @@
     ]
   },
   "scripts": {
-    "test": "node test/skills-valid.mjs && node test/sync-idempotent.mjs && node test/gate-no-secrets.mjs && node test/cli-init.mjs && node test/adapter-pick.mjs && node test/router-providers.mjs && node test/router-select.mjs && node test/router-probe.mjs && node test/router-config.mjs && node test/router-discover.mjs && node test/router-stack.mjs && node test/router-cli.mjs && node test/router-capabilities.mjs && node test/mcp-server.mjs && node test/mcp-e2e.mjs && node test/telemetry.mjs && node test/eval.mjs && node test/ui.mjs && node test/a2a.mjs && node test/mcp-http.mjs && node test/gateway-bridge.mjs && node test/synth.mjs && node test/e2e-usage.mjs",
+    "test": "node test/skills-valid.mjs && node test/sync-idempotent.mjs && node test/gate-no-secrets.mjs && node test/skill-lint.mjs && node test/cli-init.mjs && node test/adapter-pick.mjs && node test/router-providers.mjs && node test/router-select.mjs && node test/router-probe.mjs && node test/router-config.mjs && node test/router-discover.mjs && node test/router-stack.mjs && node test/router-cli.mjs && node test/router-capabilities.mjs && node test/mcp-server.mjs && node test/mcp-e2e.mjs && node test/telemetry.mjs && node test/eval.mjs && node test/ui.mjs && node test/a2a.mjs && node test/mcp-http.mjs && node test/gateway-bridge.mjs && node test/synth.mjs && node test/e2e-usage.mjs",
     "doctor": "node bin/cto-brain.mjs doctor",
     "ci": "node bin/cto-brain.mjs gate check --home . && npm test && node bin/cto-brain.mjs eval",
     "benchmark": "node scripts/benchmark-self.mjs",
