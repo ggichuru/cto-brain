@@ -98,6 +98,7 @@ cto-brain sync --promote
 | `router list\|probe\|select\|plan\|init` | Policy-first model + stack routing |
 | `stack status` | Probe configured stacks (Desk, Ollama, …) |
 | `mcp` | Run cto-brain as an MCP server (stdio) — see [docs/MCP.md](docs/MCP.md) |
+| `console` | Read-only web control plane (loopback) — see [docs/CONSOLE.md](docs/CONSOLE.md) |
 | `telemetry summary` | KPIs from local run telemetry (fallback rate, per-task providers, latency) |
 | `eval` | Score the brain's own routing/honesty/gate decisions ([docs/EVAL.md](docs/EVAL.md)) |
 | `hook install` | Stop-hook script for post-turn project sync |
