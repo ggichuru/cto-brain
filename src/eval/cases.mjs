@@ -86,8 +86,15 @@ export const EVAL_CASES = [
     name: "clean dir passes the gate",
     dimension: "gate",
     kind: "gate",
-    input: { files: { "skills/x/SKILL.md": "---\nname: x\n---\nclean body\n" } },
+    input: { files: { "skills/x/SKILL.md": "---\nname: x\ndescription: Use when testing the gate.\n---\nclean body\n" } },
     expect: { ok: true },
+  },
+  {
+    name: "structurally broken skill fails the gate (name != dir)",
+    dimension: "gate",
+    kind: "gate",
+    input: { files: { "skills/x/SKILL.md": "---\nname: y\ndescription: Use when testing the lint gate.\n---\nbody\n" } },
+    expect: { ok: false },
   },
   {
     name: "credentials.json fails the gate",

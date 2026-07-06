@@ -113,6 +113,52 @@ ok("project override provider", withOverride.provider === "ollama");
 const unknown = selectRoute({ task: "not-a-task" });
 ok("unknown task null provider", unknown.provider === null);
 
+// --- jarvis sovereign gateway selection ---
+const mockJarvisProbe = {
+  id: "jarvis",
+  reachable: true,
+  models: ["qwen2.5-coder:14b", "llama3.1:70b-instruct-q4_K_M", "nomic-embed-text:latest"],
+  baseUrl: "https://jarvis.mkulyma.com",
+  tier: "local",
+};
+
+// jarvis is in dispatch-builder's chain; with only a jarvis probe (no ollama),
+// local-prefer should select jarvis.
+const jarvisBuilder = selectRoute({
+  task: "dispatch-builder",
+  prefer: "local",
+  probes: [mockJarvisProbe],
+});
+ok("jarvis selectable for builder (local)", jarvisBuilder.provider === "jarvis");
+ok("jarvis builder picks probed model", jarvisBuilder.model === "qwen2.5-coder:14b");
+ok("jarvis builder baseUrl from probe", jarvisBuilder.baseUrl === "https://jarvis.mkulyma.com");
+ok("jarvis builder honest", jarvisBuilder.honest === true);
+
+// when both ollama and jarvis probe, ollama wins (chain order ollama, jarvis)
+const bothLocal = selectRoute({
+  task: "dispatch-builder",
+  prefer: "local",
+  probes: [mockLocalProbe, mockJarvisProbe],
+});
+ok("ollama wins over jarvis when both probed", bothLocal.provider === "ollama");
+
+// jarvis as sovereign fallback for reviewer when no cloud key + local prefer
+const jarvisReview = selectRoute({
+  task: "reviewer-tech",
+  prefer: "local",
+  probes: [mockJarvisProbe],
+  env: {},
+});
+ok("jarvis sovereign reviewer fallback", jarvisReview.provider === "jarvis");
+
+// unprobed jarvis (no key / down) must NOT be selected for local-tier task
+const jarvisUnprobed = selectRoute({
+  task: "dispatch-builder",
+  prefer: "local",
+  probes: [],
+});
+ok("unprobed jarvis not selected", jarvisUnprobed.provider === null);
+
 if (failures) {
   console.error("\n" + failures + " failure(s)");
   process.exit(1);

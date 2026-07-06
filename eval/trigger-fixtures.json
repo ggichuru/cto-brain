@@ -1,0 +1,32 @@
+{
+  "_doc": "Trigger-eval fixtures for skill-firing precedence. Each query is labelled with the skill that SHOULD fire (or 'none'). Near-miss negatives are deliberate: queries that sound like they'd fire a skill but shouldn't. Adopted 2026-07-03 from the peer-repo study (anthropics/skills description-optimization loop). Run: node scripts/trigger-eval.mjs (uses local Ollama; non-deterministic, 3 reps). NOT in the CI chain — needs a live model.",
+  "candidates": ["meta-brain", "cto-orchestration", "cto-brain", "none"],
+  "descriptions": {
+    "meta-brain": "The router. Use FIRST on ambiguous intent to map a request to the right skill; session start; 'which skill?' / 'what can you do?' questions; a new domain enters. Does NOT itself do the work — it routes.",
+    "cto-orchestration": "Orchestrate a multi-agent build: decompose into briefs, dispatch parallel builders, run reviewer trios, integrate one commit, round-close. Use when the work has 2+ independent slices and a multi-agent runner. Also the lead-CTO tier across projects.",
+    "cto-brain": "Build doctrine for real software: no code without a spec, no implementation without a failing test, model routing, proven/UNPROVEN/blocked honesty. Use on 'build this properly', 'spec this', 'TDD it', or when code is about to be written without a spec or failing test.",
+    "none": "No skill — a trivial edit, a direct factual answer, a one-line shell command, or pure conversation."
+  },
+  "queries": [
+    { "q": "which skill handles a new RF project?", "expect": "meta-brain" },
+    { "q": "what can this brain do?", "expect": "meta-brain" },
+    { "q": "I'm not sure where to start with this ask", "expect": "meta-brain" },
+    { "q": "route this request to the right place", "expect": "meta-brain" },
+    { "q": "build the admission service across 5 parallel agents and integrate", "expect": "cto-orchestration" },
+    { "q": "decompose this into builder briefs and run the reviewer trio", "expect": "cto-orchestration" },
+    { "q": "orchestrate the console rebuild with subordinate CTOs per project", "expect": "cto-orchestration" },
+    { "q": "fan out the migration across the codebase and land one commit", "expect": "cto-orchestration" },
+    { "q": "spec this feature properly before we write any code", "expect": "cto-brain" },
+    { "q": "TDD the parser — red first", "expect": "cto-brain" },
+    { "q": "build this the right way, with tests and a spec", "expect": "cto-brain" },
+    { "q": "which model should write this and how do we keep it honest?", "expect": "cto-brain" },
+    { "q": "just fix this typo in the README", "expect": "none" },
+    { "q": "what's the capital of Kenya?", "expect": "none" },
+    { "q": "chmod +x this script for me", "expect": "none" },
+    { "q": "rename this variable from x to count", "expect": "none" },
+    { "q": "add a spec of dust removal to the changelog", "expect": "none" },
+    { "q": "the CTO of the company wants a status update", "expect": "none" },
+    { "q": "route the traffic through the new gateway port", "expect": "none" },
+    { "q": "test whether the door is locked", "expect": "none" }
+  ]
+}

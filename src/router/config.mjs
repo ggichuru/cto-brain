@@ -13,6 +13,7 @@ export const DEFAULT_ROUTER_CONFIG = {
   ],
   enabledProviders: [
     "ollama",
+    "jarvis",
     "vllm",
     "llamacpp",
     "openai-compatible",

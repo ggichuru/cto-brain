@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { ensureDir, exists, listSkillNames, packageRoot } from "../paths.mjs";
 import { loadIgnorePatterns, scanForCredentials } from "../sync/non-destructive.mjs";
+import { lintSkills } from "./skill-lint.mjs";
 import { systemLayout } from "../sync/brain-sync.mjs";
 
 export function gateCheck(root) {
@@ -23,7 +24,13 @@ export function gateCheck(root) {
     }
   }
 
-  return { ok: problems.length === 0, problems, ignorePatterns: ignore };
+  // skill-structure lint (Agent Skills spec conformance) — errors block, warnings inform
+  const lint = exists(skillsDir) ? lintSkills(skillsDir) : { errors: [], warnings: [] };
+  for (const e of lint.errors) {
+    problems.push({ type: "skill-structure", path: path.join(skillsDir, e.skill, "SKILL.md"), detail: e.msg });
+  }
+
+  return { ok: problems.length === 0, problems, ignorePatterns: ignore, lintWarnings: lint.warnings };
 }
 
 export function buildManifest(opts = {}) {

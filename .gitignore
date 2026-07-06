@@ -10,3 +10,4 @@ cto-brain-*.tgz
 .claude/
 .cursor/
 .agents/
+.aider*

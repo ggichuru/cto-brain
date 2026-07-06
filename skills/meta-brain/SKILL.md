@@ -111,6 +111,14 @@ a user-invoked skill (see "Skill invocation classes").
 
 ### Domain skills (project- or topic-specific)
 
+> The domain rows below are **the author's own portfolio skills — examples, NOT
+> bundled with the npm package.** They show the shape of a domain skill and how
+> meta-brain routes to one. On a fresh install this table is your template: add
+> your own project/domain skills here (`cto-brain init --project`, then author a
+> skill), and delete the rows that don't apply to you. The core machinery
+> (routing, the lead trio, the maintenance trio, the IC disciplines) IS bundled
+> and project-agnostic.
+
 | Skill | Domain | Fire when |
 |---|---|---|
 | `frontend-brain` | Frontend / UX product engineering | Frontend builds, UI/UX work, dashboard surfaces |

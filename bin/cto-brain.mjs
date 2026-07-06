@@ -8,6 +8,8 @@ import { gateCheck, packBrain, unpackBrain } from "../src/gate/pack.mjs";
 import { routerInit, routerList, routerPlan, routerProbe, routerSelect, stackStatus, TASK_KINDS } from "../src/cli/router.mjs";
 import { startStdioServer } from "../src/mcp/server.mjs";
 import { startHttpServer } from "../src/mcp/streamableHttp.mjs";
+import { startGateway } from "../src/gateway/bridge.mjs";
+import { launchCode } from "../src/cli/code.mjs";
 import { summarize as telemetrySummarize } from "../src/telemetry/recorder.mjs";
 import { runEval } from "../src/eval/runner.mjs";
 import { buildAgentCard } from "../src/a2a/card.mjs";
@@ -48,7 +50,9 @@ function usage() {
       ["stack status", "Configured-stack reachability"],
     ]],
     ["Serve, measure & ship", [
+      ["code [<model>|--task <kind>|--model <m>] [--backend opencode|codex|aider]", "Sovereign local-model coding terminal (opencode + cto-brain wired in)"],
       ["mcp [--transport=http] [--port N] [--allow-origin <o>]", "Run as an MCP server (stdio default, or HTTP)"],
+      ["gateway [--port N] [--jarvis-base URL]", "Local OpenAI→Ollama bridge to jarvis (loopback)"],
       ["agent-card [--out <path>]", "Emit the A2A agent card (discovery)"],
       ["telemetry summary", "Local run-telemetry KPIs"],
       ["eval", "Score routing/honesty/gate decisions"],
@@ -380,6 +384,31 @@ async function main() {
         } else {
           console.log(JSON.stringify(card, null, 2));
         }
+        break;
+      }
+      case "code": {
+        const exitCode = await launchCode(process.argv.slice(2));
+        process.exit(exitCode);
+      }
+      case "gateway": {
+        const gw = await startGateway({
+          port: args.port ? Number(args.port) : undefined,
+          jarvisBase: args.jarvisBase,
+        });
+        process.stderr.write(`gateway on ${gw.url}\n`);
+        if (!process.env.JARVIS_API_KEY) {
+          process.stderr.write("  (JARVIS_API_KEY not set — /v1/* will return 503 until it is)\n");
+        }
+        process.stderr.write(`  health: curl -s 127.0.0.1:${gw.port}/healthz\n`);
+        // Stay running until interrupted; close the server cleanly on SIGINT/SIGTERM.
+        await new Promise((resolve) => {
+          const stop = async () => {
+            await gw.close().catch(() => {});
+            resolve();
+          };
+          process.on("SIGINT", stop);
+          process.on("SIGTERM", stop);
+        });
         break;
       }
       case "telemetry": {
