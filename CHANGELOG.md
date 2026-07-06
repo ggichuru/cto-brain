@@ -1,7 +1,32 @@
 # Changelog
 
 All notable changes to **cto-brain**. Versions follow SemVer; pre-1.0 minors
-may add features freely. npm latest is 0.2.0 (0.3.0–0.7.0 publish pending).
+may add features freely. npm latest is 0.9.1; 0.10.0 is the current local tip
+(publish pending `npm login`).
+
+## 0.10.0
+- **Skill-structure lint in the gate** (`src/gate/skill-lint.mjs`): `gate check`,
+  the `gate_check` MCP tool, and `prepublishOnly` now enforce Agent Skills spec
+  conformance — missing SKILL.md / bad or mismatched `name` / missing
+  `description` fail the gate; over-cap descriptions, unknown frontmatter keys,
+  >500-line bodies and leftover TODO markers warn.
+- **Cost-per-outcome telemetry**: `recordEvent` accepts `outcome` + token fields;
+  `telemetry summary` reports tokens-per-outcome. The missing quantitative leg of
+  the learning loop — a route/skill's value expressed as tokens per result.
+- **Trigger-eval harness** (`npm run trigger-eval`, `eval/trigger-fixtures.json`):
+  measures skill-firing precedence against local Ollama; 20 labelled queries incl.
+  near-miss negatives. Baseline 20/20 at qwen2.5:7b. Not in CI (needs a live model).
+
+## 0.9.x
+- **`cto-brain code`** — sovereign local-model coding terminal (opencode/codex/
+  aider backends), model chosen by the router; GB10 box-tanking guardrail.
+- Auto-routing hardened; `cto-brain code` never auto-routes to slow large models
+  in interactive use.
+
+## 0.8.0
+- IC discipline skills bundled and wired: `grill`, `tdd`, `diagnosing-bugs`,
+  `domain-modeling` (credited to mattpocock/skills); meta-brain catalog +
+  invocation classes; `CONTEXT.md` shared-vocabulary convention.
 
 ## 0.7.0
 - **Privacy-first skill synthesis** (`cto-brain skill synth`, ADR 0002): discover
