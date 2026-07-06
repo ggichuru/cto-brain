@@ -4,6 +4,15 @@ All notable changes to **cto-brain**. Versions follow SemVer; pre-1.0 minors
 may add features freely. npm latest is 0.9.1; 0.10.0 is the current local tip
 (publish pending `npm login`).
 
+## 0.11.0 (unreleased)
+- **Read-only web console** (`cto-brain console`): a self-contained control
+  plane over the brain's live state — routing matrix, stack reachability,
+  adapter wiring, telemetry (incl. cost-per-outcome), eval scorecard, portfolio
+  map, growth ledger. Loopback-only + Origin guard; GET-only (no mutation — a
+  window, not a second set of hands); zero new deps (stdlib http). Routes:
+  `/`, `/api/state`, `/api/cards`, `/healthz`; `?prefer=` recomputes routing.
+  See docs/CONSOLE.md.
+
 ## 0.10.0
 - **Skill-structure lint in the gate** (`src/gate/skill-lint.mjs`): `gate check`,
   the `gate_check` MCP tool, and `prepublishOnly` now enforce Agent Skills spec

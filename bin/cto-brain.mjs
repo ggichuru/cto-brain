@@ -287,6 +287,19 @@ async function main() {
         if (!r.ok) process.exit(1);
         break;
       }
+      case "console": {
+        const { startConsole } = await import("../src/console/server.mjs");
+        const allowOrigin = args["allow-origin"] ? String(args["allow-origin"]).split(",") : [];
+        const { url } = await startConsole({
+          host: args.host || "127.0.0.1",
+          port: args.port || 7799,
+          allowOrigin,
+          stateOpts: { home: args.home || systemBrainHome(), cwd: process.cwd(), prefer: args.prefer },
+        });
+        console.error(`cto-brain console (read-only) → ${url}`);
+        console.error("Ctrl-C to stop. Actions live in the CLI & channels; this page only reads.");
+        break; // keep the process alive on the listening server
+      }
       case "pack": {
         const r = packBrain({
           brainHome: args.home || systemBrainHome(),
