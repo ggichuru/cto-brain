@@ -10,6 +10,7 @@ import { startStdioServer } from "../src/mcp/server.mjs";
 import { startHttpServer } from "../src/mcp/streamableHttp.mjs";
 import { startGateway } from "../src/gateway/bridge.mjs";
 import { launchCode } from "../src/cli/code.mjs";
+import { runChat, chatHelp } from "../src/cli/chat.mjs";
 import { scaffoldChange, checkSpecs } from "../src/spec/contract.mjs";
 import { summarize as telemetrySummarize } from "../src/telemetry/recorder.mjs";
 import { runEval } from "../src/eval/runner.mjs";
@@ -54,6 +55,7 @@ function usage() {
     ]],
     ["Serve, measure & ship", [
       ["code [<model>|--task <kind>|--model <m>] [--backend opencode|codex|aider]", "Sovereign local-model coding terminal (opencode + cto-brain wired in)"],
+      ["chat [--port N] [--host H] [--config <p>] [--provider <id>] [--model <m>]", "Secure-Brain chat — doc-grounded, gated, your models"],
       ["mcp [--transport=http] [--port N] [--allow-origin <o>]", "Run as an MCP server (stdio default, or HTTP)"],
       ["gateway [--port N] [--jarvis-base URL]", "Local OpenAI→Ollama bridge to jarvis (loopback)"],
       ["agent-card [--out <path>]", "Emit the A2A agent card (discovery)"],
@@ -413,6 +415,14 @@ async function main() {
       case "code": {
         const exitCode = await launchCode(process.argv.slice(2));
         process.exit(exitCode);
+      }
+      case "chat": {
+        if (args.help) {
+          console.log(chatHelp());
+          break;
+        }
+        await runChat(args);
+        break;
       }
       case "gateway": {
         const gw = await startGateway({

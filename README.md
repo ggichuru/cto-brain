@@ -100,6 +100,7 @@ cto-brain sync --promote
 | `router list\|probe\|select\|plan\|init` | Policy-first model + stack routing |
 | `stack status` | Probe configured stacks (Desk, Ollama, …) |
 | `code [--model\|--task\|--backend]` | Sovereign local-model coding terminal (opencode/codex/aider) |
+| `chat [--port\|--host\|--config\|--provider\|--model]` | Secure-Brain chat — doc-grounded, gated, your models ([spec](specs/changes/secure-brain-chat/proposal.md)) |
 | `gateway` | Loopback OpenAI-wire bridge to a jarvis-style Ollama host |
 | `agent-card` | Emit the A2A agent card for peer-agent discovery |
 | `skill synth --topic` | Draft a new skill from your own code (privacy-gated) |
@@ -173,6 +174,42 @@ cto-brain stack status
 ```
 
 See [docs/USAGE.md](docs/USAGE.md) and [docs/MODEL-ROUTER.md](docs/MODEL-ROUTER.md).
+
+## cto-brain chat — talk to your brain, grounded in your project, with your models
+
+A self-hosted, doc-grounded, honest chat you fully own. Point it at your repo and
+it grounds every answer in your own docs; drive it with a local model or any
+OpenAI-compatible endpoint. Three gates, all fail-closed.
+
+```bash
+cto-brain chat                                   # local ollama + ./README + ./docs
+cto-brain chat --provider openai --model gpt-4o-mini
+OPENAI_BASE_URL=http://gpu:8000 OPENAI_API_KEY=… \
+  cto-brain chat --provider openai-compatible --model my-model
+```
+
+It prints an access URL + token at boot; open the URL, ask, and answers stream in
+(OpenAI-shaped SSE). Configure scopes and the provider in `cto-brain.config.json`
+(example: [`templates/chat/cto-brain.config.example.json`](templates/chat/cto-brain.config.example.json)):
+
+```json
+{
+  "scopes":   [{ "id": "project", "label": "My Project", "root": ".",
+                 "include": ["README.md", "docs", "ARCHITECTURE.md"], "maxBytes": 80000 }],
+  "provider": { "id": "openai-compatible", "baseUrl": "http://gpu:8000",
+                "model": "my-model", "apiKeyEnv": "OPENAI_API_KEY" },
+  "auth":     { "host": "127.0.0.1", "port": 8790 }
+}
+```
+
+**The three gates** — (1) **transport**: binds `127.0.0.1` by default, tailnet/LAN
+bind is explicit, Origin/Host loopback-checked against DNS-rebinding; (2) **API
+token**: every `/api/*` needs the token (`CTO_CHAT_TOKEN` or minted per boot),
+constant-time compared, 401 otherwise; (3) **scope ACL + secret denylist**:
+grounds only on configured scopes, docs-only, traversal-guarded, `maxBytes`-bounded,
+with a secret denylist on path **and** content — a doc that looks secret is skipped
+whole. The provider API key is read from its env var, server-side only, never
+written to disk or sent to the browser. Spec: [`specs/changes/secure-brain-chat/proposal.md`](specs/changes/secure-brain-chat/proposal.md).
 
 ## Benchmark vs 14 peers
 

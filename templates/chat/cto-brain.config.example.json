@@ -1,0 +1,34 @@
+{
+  "//": "Copy to your project root as cto-brain.config.json and edit. Then: cto-brain chat",
+  "scopes": [
+    {
+      "id": "project",
+      "label": "My Project",
+      "root": ".",
+      "include": ["README.md", "AGENTS.md", "CLAUDE.md", "docs", "ARCHITECTURE.md"],
+      "maxBytes": 80000
+    },
+    {
+      "id": "notes",
+      "label": "Design notes (inline)",
+      "root": null,
+      "text": "Ground text with no files: paste a condensed brief here and the chat answers only from it."
+    }
+  ],
+  "provider": {
+    "//local-ollama": "id ollama, no key needed:",
+    "id": "ollama",
+    "model": "llama3.1",
+
+    "//openai-compatible": "any base-URL + key: set id, baseUrl (or OPENAI_BASE_URL env), model, apiKeyEnv",
+    "//example": { "id": "openai-compatible", "baseUrl": "http://gpu-box:8000", "model": "my-model", "apiKeyEnv": "OPENAI_API_KEY" },
+
+    "//multi-model": "offer Fast/Deep by listing models:",
+    "//models": [{ "id": "llama3.1", "label": "Fast" }, { "id": "llama3.1:70b", "label": "Deep" }]
+  },
+  "auth": {
+    "host": "127.0.0.1",
+    "port": 8790,
+    "//token": "omit to mint one per boot; or set CTO_CHAT_TOKEN in the environment"
+  }
+}

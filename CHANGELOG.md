@@ -4,6 +4,27 @@ All notable changes to **cto-brain**. Versions follow SemVer; pre-1.0 minors
 may add features freely. npm latest is 0.9.1; 0.11.0 is the current local tip
 (publish pending `npm login`).
 
+## 0.12.0
+- **`cto-brain chat` — Secure-Brain chat** (`src/chat/`, `src/cli/chat.mjs`): a
+  zero-dependency, doc-grounded, honest chat any user points at their own project
+  and their own models. Config-driven scopes (`cto-brain.config.json`, default:
+  cwd README + docs/, docs-only); the model layer resolves THROUGH
+  `src/router/providers.mjs` so local (ollama native + OpenAI-compatible: vLLM/
+  LM Studio/llama.cpp/llama-swap), cloud OpenAI-compatible (base-URL+key),
+  anthropic, and jarvis all work; SSE streaming `/api/chat` (OpenAI-shaped deltas),
+  `/api/models`, `/api/projects`, and a self-contained chat UI.
+- **Three gates, fail-closed** — (1) transport: 127.0.0.1 default, explicit
+  tailnet bind, Origin/Host loopback check; (2) API token on every `/api/*`
+  (`CTO_CHAT_TOKEN` or minted per boot), constant-time compared, 401 otherwise;
+  (3) scope ACL + secret denylist on path AND content, docs-only, traversal
+  guard, `maxBytes` bound — a doc that looks secret is skipped whole. The provider
+  key is read from its env var, server-side only, never on disk or in the browser.
+- Tests: `chat-grounding` (secret `.env` PATH + `sk-…` CONTENT both skipped,
+  maxBytes bound), `chat-auth` (401/200), `chat-provider` (resolution routes to
+  configured baseUrl/model). Spec: `specs/changes/secure-brain-chat/`. Example
+  config: `templates/chat/cto-brain.config.example.json`. Privacy boundary held:
+  no operator handbook, brain scope, or absolute paths ship in the package.
+
 ## 0.11.0
 - **Router presets: llama-swap + LM Studio** (`src/router/{providers,discover,select,config}.mjs`):
   the two runtimes strangers most commonly run are now first-class — presets with
