@@ -129,7 +129,7 @@ Add to `package.json` for auto-sync on install:
 
 ```json
 {
-  "devDependencies": { "cto-brain": "^0.7.0" },
+  "devDependencies": { "cto-brain": "^0.11.0" },
   "scripts": {
     "prepare": "cto-brain sync --project-only || true"
   }
