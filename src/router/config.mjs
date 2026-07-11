@@ -16,6 +16,8 @@ export const DEFAULT_ROUTER_CONFIG = {
     "jarvis",
     "vllm",
     "llamacpp",
+    "llama-swap",
+    "lmstudio",
     "openai-compatible",
     "desk-engine",
     "anthropic",

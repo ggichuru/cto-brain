@@ -1,175 +1,179 @@
-# Building software with cto-brain
+# The cto-brain handbook
 
-This guide walks through the full operator workflow: bootstrap brains, sync skills, wire agents, route models per task, and run agentic multi-agent builds.
+You've installed a CTO in a box. This is how you actually use it — from the
+first five minutes to running multi-agent builds, coding against your own
+sovereign models, and watching the brain learn from every round.
 
-## 1. Install and bootstrap
+Everything below is real: every command shown here runs in the test suite or
+was proven on a live box before it was written down. Where something is
+honest-but-rough, the text says so.
+
+## What this thing is
+
+cto-brain is the discipline of a good engineering lead, packaged: skills your
+coding agents load, a router that picks the right model for each task, a gate
+that stops secrets leaving the building, spec contracts so nothing gets built
+without a written agreement, and a growth ledger so lessons stick instead of
+evaporating when the chat window closes.
+
+It never phones home. Everything lives in files you can read: `~/.cto-brain/`
+for your machine, `.cto-brain/` in a repo for the project.
+
+## The first five minutes
 
 ```bash
 npm install -g cto-brain
-# or add as devDependency and use npx
 
-cto-brain init                    # ~/.cto-brain/ — skills, memory, system router.json
-cto-brain init --project --name my-app   # also .cto-brain/ + CHARTER.md in cwd
-cto-brain adapter wire            # skills → Claude / Cursor / Codex dirs
-cto-brain doctor --strict
+cto-brain init                          # seed the system brain at ~/.cto-brain/
+cto-brain init --project --name my-app  # give this repo its own brain + charter
+cto-brain adapter wire                  # hand the skills to Claude Code / Cursor / Codex
+cto-brain doctor --strict               # trust, then verify
 ```
 
-`init` seeds the **system brain** at `~/.cto-brain/` (override with `CTO_BRAIN_HOME`). With `--project`, it also creates `.cto-brain/` in the current repo and copies system skills down.
+That's it. Your agents now load nine skills — `cto-orchestration`,
+`meta-brain`, `agentic-learning-loop`, `multi-agent-execution`, `grill`,
+`tdd`, `spec-driven`, `diagnosing-bugs`, `domain-modeling` — and your repo
+carries a `CHARTER.md` that says what this project is allowed to decide for
+itself.
 
-## 2. Wire skills to your tools
+`cto-brain --help` is the full map. Add `--json` to any command when a script
+is reading instead of you.
 
-Pick which agent platforms receive bundled skills (`cto-orchestration`, `meta-brain`, `agentic-learning-loop`, `multi-agent-execution`):
+## The code terminal
 
 ```bash
-# One-time setup
-cto-brain init --project --name my-app
-cto-brain adapter pick --adapters claude-code,cursor
-cto-brain adapter wire --project
-
-# See targets and wiring state
-cto-brain adapter list
-cto-brain adapter status
+cto-brain code
 ```
 
-Daily refresh:
+This opens a coding agent (opencode by default, with the cto agent wired in)
+on your own local models — no cloud account, no key, no telemetry. Pick a
+model from the menu, or skip the menu:
 
 ```bash
-cto-brain sync --pull && cto-brain adapter wire
-# or auto-wire after sync:
-cto-brain sync --pull --wire
+cto-brain code --model qwen2.5:7b-instruct     # explicit
+cto-brain code --task dispatch-builder         # let the router pick by task
+cto-brain code --backend codex                 # or aider — your choice of driver
+cto-brain code -- run "write tests for src/parser.mjs"   # headless one-shot
 ```
 
-| Adapter id | Label | Skill paths |
-|------------|-------|-------------|
-| `claude-code` | Claude Code | `~/.claude/skills`, `.claude/skills` (project) |
-| `cursor` | Cursor | `~/.cursor/skills`, `.cursor/skills` (project) |
-| `codex` | Codex / OpenAI agents | `~/.agents/skills` |
-| `opencode` | OpenCode | `~/.config/opencode/skills` |
-| `generic` | Generic | `.agents/skills` (project) |
+Straight talk about local models, from our own measurements: a 7B instruct
+model drives the agent loop fine — it writes files, uses tools, gets real
+work done — but it will occasionally claim it verified something it never
+ran. Keep the loop honest: you (or your test suite) are the verifier. Bigger
+coder models often *print* tool calls as text instead of making them, which
+is worse for agent work, not better. The picker warns you; since 0.11.0 the
+warnings come from **recorded probes** (`~/.cto-brain/conformance.json`),
+not guesses — evidence beats vibes.
 
-Preferences persist at `~/.cto-brain/settings/adapters.json`. Override for one run:
+## Routing: the right model for the job
+
+Ask what's reachable before you assume:
 
 ```bash
-CTO_BRAIN_ADAPTERS=claude-code,cursor,codex cto-brain adapter wire
+cto-brain router probe --all    # every provider, local and cloud, plus discovery
+cto-brain stack status          # the same, summarized
 ```
 
-Scope flags: `--project` (project dirs only), `--global` (user dirs only), default `both`.
-
-## 3. Keep skills fresh
-
-```bash
-npm update -g cto-brain
-cto-brain sync --pull             # npm package → system brain
-cto-brain install                 # system → agent adapter dirs
-cto-brain sync                    # system ↔ project (mtime-wins, never deletes)
-```
-
-Promote project lessons back to the system brain (lead-CTO):
+The router knows Ollama, vLLM, llama.cpp, **llama-swap**, **LM Studio**, the
+Desk engine, jarvis-style sovereign gateways, and cloud APIs — and finds the
+local ones on their default ports without being told. Then route work by what
+it needs, not by brand loyalty:
 
 ```bash
-cto-brain sync --promote
-```
-
-## 4. Two-level router config
-
-Model routing uses **merged** config from three layers (later wins):
-
-| Layer | Path | Scope |
-|-------|------|-------|
-| Package defaults | built into `cto-brain` | all installs |
-| System | `~/.cto-brain/router.json` | your machine defaults |
-| Project | `.cto-brain/router.json` | per-repo overrides |
-
-Initialize each layer:
-
-```bash
-cto-brain router init --system    # ~/.cto-brain/router.json
-cto-brain router init             # .cto-brain/router.json (seeds from merged system+defaults)
-cto-brain router init --force     # overwrite existing project file
-```
-
-Examples: [router.system.json.example](./router.system.json.example) (core) and [router.json.example](./router.json.example) (project).
-
-Key fields:
-
-- `enabledProviders` — filter fallback chains
-- `routing.defaultPrefer` — `auto` (task-tier default), `local`, or `cloud`
-- `routing.<task>` — per-task overrides (`builder`, `autonomous-build`, `integrate`, …)
-- `agentic` — dispatch pipeline knobs (`maxConcurrentBuilders`, `autoProbeBeforeDispatch`, …)
-- `stacks` — URLs for Desk, Ollama, vLLM, llama.cpp
-
-See [MODEL-ROUTER.md](./MODEL-ROUTER.md) for merge rules and task kinds.
-
-## 5. Probe and select routes
-
-Before dispatch, prove what is reachable:
-
-```bash
-cto-brain router probe            # local stacks only
-cto-brain router probe --all      # include cloud credential checks
-cto-brain stack status            # configured stacks summary
-```
-
-Pick a route for one task kind:
-
-```bash
-cto-brain router select --task dispatch-builder --prefer local
 cto-brain router select --task reviewer-security --prefer cloud
-cto-brain router select --task autonomous-build    # uses defaultPrefer (auto)
+cto-brain router select --task dispatch-builder --prefer local
+cto-brain router plan           # the whole task→model table at once
 ```
 
-Task kinds: `dispatch-builder`, `autonomous-build`, `explore`, `reviewer-security`, `reviewer-tech`, `inline-edit`, `integrate`, `research`.
+Every route names its fallback, and the sovereign floor — your own models on
+your own metal — is always in the chain. Config layers merge in order
+(package defaults → `~/.cto-brain/router.json` → `.cto-brain/router.json`),
+so a repo can override your machine, and your machine can override ours.
+Details live in [MODEL-ROUTER.md](./MODEL-ROUTER.md).
 
-## 6. Programmatic routing plan
+Remote gateway? `cto-brain gateway` runs a loopback OpenAI-wire bridge to an
+Open WebUI/Ollama host (set `JARVIS_API_KEY`, point tools at
+`http://127.0.0.1:11475/v1`).
 
-For CI scripts and autonomous dispatch pipelines, dump the full task matrix:
+## No code without a spec
+
+The `spec-driven` skill enforces it; these verbs make it cheap:
 
 ```bash
-cto-brain router plan
-cto-brain router plan --prefer cloud
+cto-brain spec init add-dark-mode   # scaffolds specs/changes/add-dark-mode/
+cto-brain spec check                # every proposal has its four sections, filled
 ```
 
-Output includes `tasks` (one route per kind), `layers` (which config files exist), `configPaths`, and `agentic` settings. Import the same API from Node:
+A change contract is one page: Intent, Behavior, Acceptance criteria,
+Non-goals. Freeze it, then hand each criterion to the `tdd` loop — red,
+green, refactor. When implementation proves the spec wrong, fix the spec
+first. The archived change dir becomes your decision record for free.
 
-```javascript
-import { routerPlan } from "cto-brain/src/cli/router.mjs";
+## Running a real build round
 
-const plan = await routerPlan({ cwd: process.cwd(), prefer: "auto" });
-for (const [task, route] of Object.entries(plan.tasks)) {
-  console.log(task, route.provider, route.model);
-}
+The shape of a multi-agent round, start to finish:
+
+1. `cto-brain preflight dispatch` — briefs written? file scopes disjoint?
+2. `cto-brain router probe --all` — prove your lanes before you dispatch.
+3. Fan out builders (your agent platform does this; the skills tell it how).
+4. Reviewers on the integrated tree — never skip because "the round is small."
+5. One integrating commit. `cto-brain preflight commit` is the checklist.
+6. Close the round — and this is the part most tools don't have:
+
+```bash
+cto-brain round-close --tag wave-3 \
+  --summary "shipped the parser + 2 fixes" \
+  --lesson "streaming JSON needs the reassembly buffer" \
+  --outcome feature-shipped --tokens-out 250000
 ```
 
-## 7. Agentic coding workflow
+That one command writes the growth ledger (system and project), files the
+lesson, and records cost-per-outcome telemetry. Later, `cto-brain telemetry
+summary` tells you what a shipped feature actually costs you in tokens —
+the learning loop with numbers attached.
 
-Typical round for shipping features with multiple agents:
+## The brain grows — on purpose
 
-1. **Preflight** — `cto-brain preflight dispatch` (punch list, file scopes, briefs)
-2. **Probe** — `cto-brain router probe --all`
-3. **Plan** — `cto-brain router plan` (or per-lane `router select`)
-4. **Dispatch** — fan out builders with six-section briefs; use `autonomous-build` routes for sustained loops
-5. **Review** — `reviewer-security` + `reviewer-tech` on cloud when keys exist
-6. **Integrate** — `integrate` task kind for merge / conflict decisions
-7. **Close** — `cto-brain round-close --tag wave-N --summary "…" --lesson "…"`
-8. **Commit** — `cto-brain preflight commit`; single integrating commit, no AI attribution
+- Lessons land in ledgers (`GROWTH.md` per project, one row per round).
+- `cto-brain skill synth --topic "rate limiting" --dir ./svc` drafts a new
+  skill from your own code, privacy-gated — it refuses to write secrets.
+- `cto-brain eval` scores the brain's routing, honesty, and gating decisions
+  against fixtures, so "is this thing actually learning?" has an answer.
+- `cto-brain gate check --home .` scans for credential leaks before anything
+  is shared or published. The gate also runs before every npm publish.
 
-Load bundled skills in your agent (`cto-orchestration`, `multi-agent-execution`, `agentic-learning-loop`) via `cto-brain adapter wire` or `cto-brain adapter pick` + `adapter wire`.
+Keep it fresh: `npm update -g cto-brain && cto-brain sync --pull --wire`.
+Sync never deletes — it's rsync-style, newest wins, your edits survive.
 
-## 8. Project integration
+## Living in someone else's repo
 
-Add to `package.json`:
+Drop-in for a project, pinned like any dev tool:
 
 ```json
 {
-  "devDependencies": { "cto-brain": "^0.7.0" },
-  "scripts": {
-    "prepare": "cto-brain sync --project-only || true"
-  }
+  "devDependencies": { "cto-brain": "^0.11.0" },
+  "scripts": { "prepare": "cto-brain sync --project-only || true" }
 }
 ```
 
+Agents that speak MCP can skip the CLI entirely: `cto-brain mcp` serves the
+router, gate, eval, and round-close as tools (stdio, or
+`--transport=http --port 3737` for remote).
+
+## When something is off
+
+```bash
+cto-brain doctor --strict     # says what's wired, what's missing, what to run
+cto-brain router probe        # "is it reachable" beats "it should work"
+```
+
+If a model behaves oddly in the code terminal, check its conformance verdict
+before blaming the tool — a model that can't emit structured tool calls
+can't drive an agent loop, and the ledger knows which ones can.
+
 ## See also
 
-- [MODEL-ROUTER.md](./MODEL-ROUTER.md) — policy rules, providers, merge semantics
-- [README.md](../README.md) — CLI reference table
-- `skills/cto-orchestration/references/model-router.md` — orchestration discipline
+- [MODEL-ROUTER.md](./MODEL-ROUTER.md) — providers, merge rules, task kinds
+- [EXAMPLES.md](./EXAMPLES.md) — worked examples, copy-paste ready
+- [ROADMAP.md](./ROADMAP.md) — where this is going, with honest gates
+- [README.md](../README.md) — the full CLI reference table

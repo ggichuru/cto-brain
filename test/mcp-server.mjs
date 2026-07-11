@@ -39,6 +39,11 @@ ok("router_select task enum matches TASK_KINDS", sel.inputSchema.properties.task
 const rc = TOOLS.find((t) => t.name === "round_close");
 ok("round_close marked WRITE", /write/i.test(rc.description));
 
+// --- round_close advertises optional outcome-telemetry fields ---
+ok("round_close schema has outcome (string)", rc.inputSchema.properties.outcome && rc.inputSchema.properties.outcome.type === "string");
+ok("round_close schema has tokensIn/tokensOut (number)", rc.inputSchema.properties.tokensIn?.type === "number" && rc.inputSchema.properties.tokensOut?.type === "number");
+ok("outcome fields stay optional", ["outcome", "tokensIn", "tokensOut"].every((f) => !rc.inputSchema.required.includes(f)));
+
 // --- dispatcher: unknown tool throws ---
 let threw = false;
 try { await callTool("does_not_exist", {}); } catch { threw = true; }

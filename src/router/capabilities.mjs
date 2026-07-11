@@ -158,9 +158,19 @@ export function pickByTask(models, task) {
  * qwen2.5-coder:14b → text ✗. Heuristic (conservative — unknown → false):
  * coder templates and the gemma + vision families don't emit structured calls;
  * qwen2.5 (non-coder), llama3.1/3.3, mistral, and generic -instruct do.
+ *
+ * A recorded conformance verdict (see conformance.mjs) is evidence and
+ * overrides the heuristic both ways: pass opts.verdicts as a
+ * { [modelId]: verdict } map — 'structured' → true, any other recorded
+ * verdict → false, unprobed → heuristic unchanged.
  */
-export function toolCapable(id) {
+export function toolCapable(id, opts) {
   const l = String(id || "").toLowerCase();
+  // opts guard tolerates Array.prototype.filter passing an index here
+  const verdicts = opts && typeof opts === "object" ? opts.verdicts : null;
+  const recorded = verdicts ? verdicts[String(id || "")] : undefined;
+  if (recorded === "structured") return true;
+  if (recorded === "text-embedded" || recorded === "none" || recorded === "error") return false;
   if (!tagModel(id).chat) return false;
   if (l.includes("coder")) return false;
   if (l.includes("vl") || l.includes("vision")) return false;

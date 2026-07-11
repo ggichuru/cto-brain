@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ensureDir, exists, templatesDir } from "../paths.mjs";
 import { systemLayout, initSystemBrain } from "../sync/brain-sync.mjs";
+import { recordEvent } from "../telemetry/recorder.mjs";
 
 export function appendGrowthRow(opts = {}) {
   const ledgerPath = opts.ledgerPath;
@@ -86,6 +87,20 @@ export function roundClose(opts = {}) {
   } else if (opts.noOp !== false && !opts.lesson) {
     results.noop = true;
   }
+
+  // Cost-per-outcome accrues at the round boundary. Best-effort (recordEvent
+  // swallows failures): telemetry must never break the ritual. Token flags
+  // arrive as strings from the CLI; non-finite values are dropped, never NaN.
+  recordEvent(
+    {
+      kind: "round_close",
+      outcome: opts.outcome || "round-closed",
+      tokensIn: Number(opts.tokensIn),
+      tokensOut: Number(opts.tokensOut),
+      ok: true,
+    },
+    sys.home
+  );
 
   return results;
 }
