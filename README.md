@@ -27,7 +27,7 @@ cto-brain doctor --strict
 | Project brain | `.cto-brain/` | Project addendum, local skills, project memory |
 | Agent adapters | `~/.claude/skills`, `.cursor/skills`, `~/.agents/skills` | Wired via `cto-brain adapter wire` |
 
-Bundled core skills (8):
+Bundled core skills (9):
 
 - `cto-orchestration` — 9 CTO roles, reviewer trio, file-scope discipline
 - `meta-brain` — intent router
@@ -35,6 +35,7 @@ Bundled core skills (8):
 - `multi-agent-execution` — parallel dispatch substrate
 - `grill` — scope interview before building (mattpocock/skills)
 - `tdd` — red-green-refactor with a fast feedback loop
+- `spec-driven` — openspec-style change contracts (`cto-brain spec init|check`), no code without a spec
 - `diagnosing-bugs` — reproduce → minimize → hypothesize → instrument → fix
 - `domain-modeling` — build + maintain `CONTEXT.md` shared vocabulary
 

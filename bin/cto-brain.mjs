@@ -10,6 +10,7 @@ import { startStdioServer } from "../src/mcp/server.mjs";
 import { startHttpServer } from "../src/mcp/streamableHttp.mjs";
 import { startGateway } from "../src/gateway/bridge.mjs";
 import { launchCode } from "../src/cli/code.mjs";
+import { scaffoldChange, checkSpecs } from "../src/spec/contract.mjs";
 import { summarize as telemetrySummarize } from "../src/telemetry/recorder.mjs";
 import { runEval } from "../src/eval/runner.mjs";
 import { buildAgentCard } from "../src/a2a/card.mjs";
@@ -37,6 +38,8 @@ function usage() {
     ]],
     ["Skills & adapters", [
       ["adapter list|pick|wire|status [--adapters …]", "Manage platform skill wiring"],
+      ["spec init <change-id> [--dir <root>]", "Scaffold an openspec-style change contract"],
+      ["spec check [--dir <root>]", "Lint spec proposals for required sections"],
       ["round-close --tag <t> --summary <s> [--lesson <l>]", "Append growth-ledger row (+feedback)"],
       ["deploy-cto [--name <project>]", "Charter + portfolio register + first brief"],
       ["digest [--week YYYY-Www]", "Weekly lead-CTO portfolio digest"],
@@ -318,6 +321,24 @@ async function main() {
       case "preflight": {
         preflight(sub);
         break;
+      }
+      case "spec": {
+        const root = path.resolve(args.dir || process.cwd());
+        if (sub === "init") {
+          const id = args._[2];
+          if (!id) throw new Error("spec init: change id required, e.g. `cto-brain spec init add-widget`");
+          const r = scaffoldChange({ id, root });
+          console.log(`Scaffolded ${r.dir}`);
+          for (const f of r.files) console.log(`  ${path.relative(root, f)}`);
+          break;
+        }
+        if (sub === "check") {
+          const r = checkSpecs({ root });
+          emit(args, r);
+          if (!r.ok) process.exit(1);
+          break;
+        }
+        throw new Error("Usage: cto-brain spec init <change-id>|check [--dir <root>]");
       }
       case "router": {
         if (sub === "list") {

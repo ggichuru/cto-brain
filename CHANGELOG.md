@@ -1,8 +1,20 @@
 # Changelog
 
 All notable changes to **cto-brain**. Versions follow SemVer; pre-1.0 minors
-may add features freely. npm latest is 0.9.1; 0.10.0 is the current local tip
+may add features freely. npm latest is 0.9.1; 0.11.0 is the current local tip
 (publish pending `npm login`).
+
+## 0.11.0
+- **Spec contracts, openspec-style, dependency-free** (`src/spec/contract.mjs`):
+  `cto-brain spec init <change-id>` scaffolds `specs/changes/<id>/{proposal.md,tasks.md}`
+  from `templates/spec/`; `cto-brain spec check` lints proposals for the four
+  required sections (Intent / Behavior / Acceptance criteria / Non-goals) and
+  treats empty sections as errors. Exit 1 on failure; JSON report.
+  Spec: `docs/integrations/spec-contracts.md`. The 2026-07-03 peer-study round
+  rejected the openspec CLI as a dependency — this adopts the mechanics natively.
+- **New bundled skill `spec-driven`** (9th): the SDD half of the SDD×TDD
+  doctrine as a model-invoked discipline — propose → freeze → implement (tdd)
+  → verify → archive, drift-is-a-bug. Wired into `agentskills`.
 
 ## 0.10.0
 - **Skill-structure lint in the gate** (`src/gate/skill-lint.mjs`): `gate check`,
