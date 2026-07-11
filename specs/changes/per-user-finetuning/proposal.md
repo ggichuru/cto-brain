@@ -1,9 +1,19 @@
 # Change: per-user-finetuning
 
-**Status:** Proposed (2026-07-11), NOT frozen — awaiting the deep-research
-report on LoRA/RL feasibility (open-source coding-agent stacks, GB10-class
-hardware) before freeze. Operator charge: "enable fine tuning of the models,
-per user and even growing with user."
+**Status:** Proposed (2026-07-11), NOT frozen. Research landed same day —
+see `docs/research/2026-07-11-local-coding-agent-stacks.md`. Verdicts that
+gate the freeze: LoRA/QLoRA on the GB10 is FEASIBLE (F7: official Unsloth
+DGX Spark support, ~68GB for a 120B QLoRA; setup not turnkey on
+aarch64/sm_121 — Docker + source-built Blackwell deps); own-repo LoRA
+improving AGENTIC coding is UNPROVEN (vendor assertion, no benchmarks) — the
+controlled experiment in this change's acceptance criteria is the honest
+next step, not a rollout; agentic RL (DeepSWE-class) confirmed OUT of
+single-box scope (~64 H100s), keeping it in Non-goals; and skill-file
+in-context learning has stronger verified evidence today (F6: +9.7pp
+CODESKILL headline, ~+5.7pp for a non-RL-curated system like ours) — so
+weight-level learning COMPOSES with, never replaces, the skill-file leg.
+Trainer seam first backend at freeze: unsloth. Operator charge: "enable
+fine tuning of the models, per user and even growing with user."
 
 ## Intent
 Add the weight-level leg to the learning loop. Today cto-brain grows only
