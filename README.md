@@ -90,7 +90,8 @@ cto-brain sync --promote
 | `install` | Wire skills to Claude/Cursor/Codex adapters |
 | `doctor [--strict]` | Health check: skills, credentials, adapters |
 | `adapter list\|wire` | List or wire platform skill directories |
-| `round-close` | Append growth ledger row + optional feedback scaffold |
+| `spec init\|check` | Openspec-style change contracts — scaffold + lint (`spec-driven` skill) |
+| `round-close [--outcome --tokens-in --tokens-out]` | Growth ledger row + cost-per-outcome telemetry |
 | `deploy-cto` | CHARTER + portfolio registration + first-round brief |
 | `digest` | Weekly lead-CTO portfolio digest template |
 | `gate check` | Scan for credential leaks before pack/share |
@@ -98,6 +99,10 @@ cto-brain sync --promote
 | `preflight dispatch\|commit` | Pre-flight checklists |
 | `router list\|probe\|select\|plan\|init` | Policy-first model + stack routing |
 | `stack status` | Probe configured stacks (Desk, Ollama, …) |
+| `code [--model\|--task\|--backend]` | Sovereign local-model coding terminal (opencode/codex/aider) |
+| `gateway` | Loopback OpenAI-wire bridge to a jarvis-style Ollama host |
+| `agent-card` | Emit the A2A agent card for peer-agent discovery |
+| `skill synth --topic` | Draft a new skill from your own code (privacy-gated) |
 | `mcp` | Run cto-brain as an MCP server (stdio) — see [docs/MCP.md](docs/MCP.md) |
 | `telemetry summary` | KPIs from local run telemetry (fallback rate, per-task providers, latency) |
 | `eval` | Score the brain's own routing/honesty/gate decisions ([docs/EVAL.md](docs/EVAL.md)) |
