@@ -40,7 +40,7 @@ function usage() {
       ["adapter list|pick|wire|status [--adapters …]", "Manage platform skill wiring"],
       ["spec init <change-id> [--dir <root>]", "Scaffold an openspec-style change contract"],
       ["spec check [--dir <root>]", "Lint spec proposals for required sections"],
-      ["round-close --tag <t> --summary <s> [--lesson <l>]", "Append growth-ledger row (+feedback)"],
+      ["round-close --tag <t> --summary <s> [--lesson <l>] [--outcome <o>] [--tokens-in <n>] [--tokens-out <n>]", "Append growth-ledger row (+feedback) + outcome telemetry"],
       ["deploy-cto [--name <project>]", "Charter + portfolio register + first brief"],
       ["digest [--week YYYY-Www]", "Weekly lead-CTO portfolio digest"],
     ]],
@@ -268,6 +268,9 @@ async function main() {
           lesson: args.lesson,
           feedbackTopic: args.feedback,
           feedbackDescription: args.feedbackDescription,
+          outcome: args.outcome,
+          tokensIn: args.tokensIn,
+          tokensOut: args.tokensOut,
         });
         console.log(JSON.stringify(r, null, 2));
         break;

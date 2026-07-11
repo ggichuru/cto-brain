@@ -1,4 +1,5 @@
 import { selectRoute, TASK_KINDS, ROUTING_RULES } from "../src/router/select.mjs";
+import { DEFAULT_ROUTER_CONFIG } from "../src/router/config.mjs";
 
 let failures = 0;
 
@@ -158,6 +159,77 @@ const jarvisUnprobed = selectRoute({
   probes: [],
 });
 ok("unprobed jarvis not selected", jarvisUnprobed.provider === null);
+
+// --- llama-swap / lmstudio local gateways ---
+const mockLlamaSwapProbe = {
+  id: "llama-swap",
+  reachable: true,
+  models: ["qwen3-coder-30b", "glm-4.5-air"],
+  baseUrl: "http://127.0.0.1:8080",
+};
+
+// ollama down, llama-swap reachable: local builder routes to llama-swap.
+const swapBuilder = selectRoute({
+  task: "dispatch-builder",
+  prefer: "local",
+  probes: [mockLlamaSwapProbe],
+});
+ok("llama-swap selectable for builder (local)", swapBuilder.provider === "llama-swap");
+ok("llama-swap builder picks probed model", swapBuilder.model === "qwen3-coder-30b");
+ok("llama-swap builder baseUrl from probe", swapBuilder.baseUrl === "http://127.0.0.1:8080");
+ok("llama-swap builder honest", swapBuilder.honest === true);
+
+const mockLmStudioProbe = {
+  id: "lmstudio",
+  reachable: true,
+  models: ["qwen2.5-coder-14b-mlx"],
+  baseUrl: "http://127.0.0.1:1234",
+};
+
+const lmBuilder = selectRoute({
+  task: "dispatch-builder",
+  prefer: "local",
+  probes: [mockLmStudioProbe],
+});
+ok("lmstudio selectable for builder (local)", lmBuilder.provider === "lmstudio");
+ok("lmstudio builder picks probed model", lmBuilder.model === "qwen2.5-coder-14b-mlx");
+ok("lmstudio builder baseUrl from probe", lmBuilder.baseUrl === "http://127.0.0.1:1234");
+
+// fallbackChain ordering: ollama -> llamacpp -> llama-swap/lmstudio -> cloud
+for (const task of ["dispatch-builder", "autonomous-build"]) {
+  const chain = ROUTING_RULES[task].fallbackChain;
+  const iOllama = chain.indexOf("ollama");
+  const iCpp = chain.indexOf("llamacpp");
+  const iSwap = chain.indexOf("llama-swap");
+  const iLm = chain.indexOf("lmstudio");
+  const iCloud = chain.indexOf("anthropic");
+  ok(`${task} chain has llama-swap`, iSwap !== -1);
+  ok(`${task} chain has lmstudio`, iLm !== -1);
+  ok(`${task} chain ollama before llamacpp`, iOllama !== -1 && iOllama < iCpp);
+  ok(`${task} chain llamacpp before llama-swap`, iCpp < iSwap);
+  ok(`${task} chain llamacpp before lmstudio`, iCpp < iLm);
+  ok(`${task} chain llama-swap before cloud`, iCloud !== -1 && iSwap < iCloud);
+  ok(`${task} chain lmstudio before cloud`, iLm < iCloud);
+}
+
+// remaining local-first chains carry them too, before any cloud entry
+for (const task of ["explore", "inline-edit"]) {
+  const chain = ROUTING_RULES[task].fallbackChain;
+  const iSwap = chain.indexOf("llama-swap");
+  const iLm = chain.indexOf("lmstudio");
+  const iCloud = chain.indexOf("anthropic");
+  ok(`${task} chain has llama-swap before cloud`, iSwap !== -1 && iSwap < iCloud);
+  ok(`${task} chain has lmstudio before cloud`, iLm !== -1 && iLm < iCloud);
+}
+
+// default enabledProviders must not filter the new presets out
+const enabledDefault = selectRoute({
+  task: "dispatch-builder",
+  prefer: "local",
+  probes: [mockLlamaSwapProbe],
+  config: { enabledProviders: DEFAULT_ROUTER_CONFIG.enabledProviders },
+});
+ok("llama-swap enabled by default config", enabledDefault.provider === "llama-swap");
 
 if (failures) {
   console.error("\n" + failures + " failure(s)");

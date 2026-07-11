@@ -19,19 +19,19 @@ export const TASK_KINDS = [
 export const ROUTING_RULES = {
   "dispatch-builder": {
     preferTier: "local",
-    fallbackChain: ["ollama", "jarvis", "vllm", "llamacpp", "openai-compatible", "anthropic", "openai", "fugu", "cursor", "codex"],
+    fallbackChain: ["ollama", "jarvis", "vllm", "llamacpp", "llama-swap", "lmstudio", "openai-compatible", "anthropic", "openai", "fugu", "cursor", "codex"],
     defaultModels: { ollama: "qwen2.5-coder:14b", jarvis: "qwen2.5-coder:14b", vllm: "", anthropic: "claude-sonnet-4-20250514" },
     rationale: "Builders run token-heavy; local coders OK when probe succeeds.",
   },
   "autonomous-build": {
     preferTier: "local",
-    fallbackChain: ["ollama", "jarvis", "vllm", "llamacpp", "openai-compatible", "anthropic", "openai", "fugu", "cursor", "codex"],
+    fallbackChain: ["ollama", "jarvis", "vllm", "llamacpp", "llama-swap", "lmstudio", "openai-compatible", "anthropic", "openai", "fugu", "cursor", "codex"],
     defaultModels: { ollama: "qwen2.5-coder:14b", jarvis: "qwen2.5-coder:14b", anthropic: "claude-sonnet-4-20250514", openai: "gpt-4o" },
     rationale: "Sustained agentic coding loops; local first, cloud when keys or IDE session available.",
   },
   explore: {
     preferTier: "local",
-    fallbackChain: ["ollama", "jarvis", "vllm", "anthropic", "openai"],
+    fallbackChain: ["ollama", "jarvis", "vllm", "llama-swap", "lmstudio", "anthropic", "openai"],
     defaultModels: { ollama: "llama3.1" },
     rationale: "Read-only exploration; local sufficient for map-the-territory work.",
   },
@@ -49,7 +49,7 @@ export const ROUTING_RULES = {
   },
   "inline-edit": {
     preferTier: "local",
-    fallbackChain: ["ollama", "jarvis", "vllm", "anthropic"],
+    fallbackChain: ["ollama", "jarvis", "vllm", "llama-swap", "lmstudio", "anthropic"],
     defaultModels: { ollama: "qwen2.5-coder:7b", jarvis: "qwen2.5-coder:14b" },
     rationale: "Parent inline work under 5 minutes — local fast path.",
   },

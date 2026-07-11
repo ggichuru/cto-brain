@@ -62,6 +62,35 @@ const listedJarvis = listProviders().find((p) => p.id === "jarvis");
 ok("jarvis listed", !!listedJarvis);
 ok("jarvis listed not stub", listedJarvis?.stub === false);
 
+// --- llama-swap preset (single-box gateway; also serves Anthropic /v1/messages) ---
+const llamaSwap = getProvider("llama-swap");
+ok("llama-swap preset present", llamaSwap?.id === "llama-swap");
+ok("llama-swap tier local", llamaSwap?.tier === "local");
+ok("llama-swap openAiCompatible", llamaSwap?.openAiCompatible === true);
+ok("llama-swap probePath /v1/models", llamaSwap?.probePath === "/v1/models");
+ok("llama-swap envKey", llamaSwap?.envKey === "LLAMA_SWAP_BASE_URL");
+ok("llama-swap baseUrl default", resolveBaseUrl(llamaSwap, {}) === "http://127.0.0.1:8080");
+ok(
+  "llama-swap baseUrl env override",
+  resolveBaseUrl(llamaSwap, { LLAMA_SWAP_BASE_URL: "http://10.0.0.9:9292/" }) === "http://10.0.0.9:9292"
+);
+ok("llama-swap note documents /v1/messages", typeof llamaSwap?.note === "string" && llamaSwap.note.includes("/v1/messages"));
+ok("llama-swap listed", listProviders().some((p) => p.id === "llama-swap"));
+
+// --- lmstudio preset (the common Mac laptop case) ---
+const lmstudio = getProvider("lmstudio");
+ok("lmstudio preset present", lmstudio?.id === "lmstudio");
+ok("lmstudio tier local", lmstudio?.tier === "local");
+ok("lmstudio openAiCompatible", lmstudio?.openAiCompatible === true);
+ok("lmstudio probePath /v1/models", lmstudio?.probePath === "/v1/models");
+ok("lmstudio envKey", lmstudio?.envKey === "LMSTUDIO_BASE_URL");
+ok("lmstudio baseUrl default", resolveBaseUrl(lmstudio, {}) === "http://127.0.0.1:1234");
+ok(
+  "lmstudio baseUrl env override",
+  resolveBaseUrl(lmstudio, { LMSTUDIO_BASE_URL: "http://10.0.0.9:1234/" }) === "http://10.0.0.9:1234"
+);
+ok("lmstudio listed", listProviders().some((p) => p.id === "lmstudio"));
+
 if (failures) {
   console.error("\n" + failures + " failure(s)");
   process.exit(1);

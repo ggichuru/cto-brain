@@ -5,6 +5,25 @@ may add features freely. npm latest is 0.9.1; 0.11.0 is the current local tip
 (publish pending `npm login`).
 
 ## 0.11.0
+- **Router presets: llama-swap + LM Studio** (`src/router/{providers,discover,select,config}.mjs`):
+  the two runtimes strangers most commonly run are now first-class — presets with
+  env overrides (`LLAMA_SWAP_BASE_URL`, `LMSTUDIO_BASE_URL`), localhost discovery
+  (llama-swap disambiguated from bare llama.cpp via one shared `GET /running`
+  probe per URL), and placement in every local-first fallback chain before cloud.
+- **Cost-per-outcome telemetry goes live** — `round-close` gains
+  `--outcome/--tokens-in/--tokens-out` (MCP `round_close` passes the same through);
+  the 0.10.0 recording leg finally has a caller, best-effort so telemetry can
+  never break the ritual.
+- **Tool-conformance ledger** (`src/router/conformance.mjs`): probe, don't guess —
+  a pure classifier over OpenAI-wire and Ollama-native replies
+  (structured | text-embedded | none | error), verdicts persisted to
+  `~/.cto-brain/conformance.json`; `toolCapable()` consults recorded evidence
+  before the substring heuristic (fail-open to heuristic, never a crash).
+  Live leg proven env-gated: `ollama qwen2.5:7b-instruct → structured`.
+- **Ultraplan roadmap** (`docs/ROADMAP.md`) + 7 spec contracts under
+  `specs/changes/` (3 frozen Phase-1 above; searxng-research-seam,
+  distributed-substrate, per-user-finetuning as gated proposals) + verified
+  research report `docs/research/2026-07-11-local-coding-agent-stacks.md`.
 - **Spec contracts, openspec-style, dependency-free** (`src/spec/contract.mjs`):
   `cto-brain spec init <change-id>` scaffolds `specs/changes/<id>/{proposal.md,tasks.md}`
   from `templates/spec/`; `cto-brain spec check` lints proposals for the four
