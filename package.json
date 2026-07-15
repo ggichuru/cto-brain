@@ -35,6 +35,7 @@
   "agentskills": {
     "skills": [
       "./skills/cto-orchestration",
+      "./skills/agent-design-space",
       "./skills/meta-brain",
       "./skills/agentic-learning-loop",
       "./skills/multi-agent-execution",

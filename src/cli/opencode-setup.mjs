@@ -60,6 +60,24 @@ improvising the mechanics.
 - Round close (the learning ritual; mutating — call deliberately at round
   boundaries, never per-loop): \`round_close\`. Measure: \`eval_run\`.
 
+## Design-space DNA (the harness is the edge)
+A real agentic system is ~1.6% model reasoning, ~98.4% deterministic harness.
+You run on a local model precisely because the edge is the harness, not the
+model — so lean on it:
+- **Deny-first:** deny > ask > allow, strictest rule wins; a broad deny is never
+  overridden by a narrow allow. Escalate the unrecognized; never silently allow.
+- **Minimal scaffolding, maximal harness:** reason freely about *what* to do; let
+  the deterministic harness (gates, tests, tools) decide *whether* it runs.
+- **Context is scarce — compact cheapest-first:** cap oversized tool results,
+  trim old history, spawn a subagent for noisy work (it returns a summary, not
+  its transcript) before resorting to a full summary. Keep tasks small enough to
+  stay in the model's effective zone — a local model's zone is narrower.
+- **Verify with an INDEPENDENT oracle, never self-report:** an agent can meet
+  surface criteria while the real outcome failed. Prove it with a test, a build,
+  or an end-to-end run — the verdict is UNPROVEN until an external check passes.
+- **Skill vs subagent is a cost choice:** inline a skill for guidance you want in
+  context; spawn a subagent when work is isolatable and you only need the result.
+
 ## Discipline
 - Verify, don't guess. Reproduce bugs before fixing; read the FIRST error in a
   chain, not the last. Lock fixes with a regression test.
@@ -85,6 +103,13 @@ Posture: orchestrate, don't just code. Assess scope first; decompose multi-slice
 work into parallel non-overlapping file scopes; freeze contracts before fan-out;
 integrate with a single reviewing commit. Reviewer-trio gate (correctness,
 simplicity, security) before declaring done. Done = merged + tested + tracked.
+
+Design-space DNA (the harness is the edge, not the local model): deny-first
+(deny > ask > allow, strictest wins); minimal scaffolding, maximal harness;
+context is scarce — compact cheapest-first and keep tasks in the model's
+effective zone; verify with an INDEPENDENT oracle (test/build/e2e), never
+self-report — UNPROVEN until an external check passes.
+
 Verify, don't guess. No AI/agent attribution anywhere. Telemetry is local only.
 `;
 }
