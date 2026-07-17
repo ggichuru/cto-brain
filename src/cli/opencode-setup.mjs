@@ -24,7 +24,7 @@ export function opencodeConfigDir() {
 // Absolute path to a cto-brain binary opencode can spawn (it spawns a process,
 // not a shell — so the shell function/alias won't do). Prefer ~/bin/cto-brain
 // (the verified wrapper), else the running binary, else bare name on PATH.
-function ctoBrainBin() {
+export function ctoBrainBin() {
   const home = os.homedir();
   const candidates = [
     path.join(home, "bin", "cto-brain"),

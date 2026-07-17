@@ -16,7 +16,8 @@
 import { spawn } from "node:child_process";
 import { tagModel, pickByTask, toolCapable, pickToolModel } from "../router/capabilities.mjs";
 import { selectFromMenu, dim, green, sym } from "./ui.mjs";
-import { ensureOpencodeWiring, ensureAiderConventions, ensureCodexMcp } from "./opencode-setup.mjs";
+import { ensureOpencodeWiring, ensureAiderConventions, ensureCodexMcp, ctoBrainBin } from "./opencode-setup.mjs";
+import { compileConfigContent } from "./config-compiler.mjs";
 
 const OLLAMA_HOST = (process.env.OLLAMA_HOST || "http://127.0.0.1:11434").replace(/\/+$/, "");
 
@@ -108,9 +109,9 @@ async function resolveModel(opts, models, toolsRequired = false) {
   return selectFromMenu(title, items, { defaultIndex });
 }
 
-function run(cmd, args) {
+function run(cmd, args, env) {
   return new Promise((resolve) => {
-    const child = spawn(cmd, args, { stdio: "inherit" });
+    const child = spawn(cmd, args, { stdio: "inherit", env: env ? { ...process.env, ...env } : process.env });
     child.on("exit", (code) => resolve(code ?? 0));
     child.on("error", (e) => {
       process.stderr.write(`${sym.bad()} failed to launch ${cmd}: ${e.message}\n`);
@@ -132,8 +133,21 @@ async function launchOpencode(model, opts) {
   const args = [];
   if (agent) args.push("--agent", agent);
   args.push("-m", `ollama/${model}`, ...opts.passthrough);
+  // Compile a runtime config overlay and inject it via OPENCODE_CONFIG_CONTENT
+  // (ADR-0005): the launch's provider + selected model + MCP become authoritative
+  // regardless of the user's global opencode.jsonc — which we no longer need to
+  // mutate. This also root-fixes "model not valid": the picked model is always
+  // present in the overlay's model map. `ensureModel: model` force-lists an
+  // explicit/giant pick. Fail-safe: on an empty roster the overlay is skipped so
+  // opencode falls back to its own config.
+  let overlayEnv;
+  if (models.length) {
+    const content = compileConfigContent(models, { mcpBin: ctoBrainBin(), model, ensureModel: model });
+    overlayEnv = { OPENCODE_CONFIG_CONTENT: content };
+    process.stderr.write(`${sym.arrow()} ${dim("runtime config overlay injected")} ${dim("(OPENCODE_CONFIG_CONTENT, " + Object.keys(JSON.parse(content).provider.ollama.models).length + " models)")}\n`);
+  }
   process.stderr.write(`${sym.arrow()} opencode on ${green("ollama/" + model)}${agent ? dim(" · agent " + agent) : ""} ${dim("(sovereign, local)")}\n`);
-  const code = await run("opencode", args);
+  const code = await run("opencode", args, overlayEnv);
   if (code === 127) process.stderr.write(`  install it: ${dim("npm i -g opencode-ai")}\n`);
   return code;
 }

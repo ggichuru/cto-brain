@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { initProjectBrain, initSystemBrain, pullPackageToSystem, syncSystemProject } from "../src/sync/brain-sync.mjs";
-import { runDoctor, installToAgents, writeHookInstall } from "../src/cli/doctor.mjs";
+import { runDoctor, installToAgents, writeHookInstall, kernelHealth } from "../src/cli/doctor.mjs";
 import { adapterList, adapterPick, adapterStatus, formatAdapterListTable, wireSkills } from "../src/cli/adapters.mjs";
 import { roundClose, deployCto } from "../src/cli/round-close.mjs";
 import { writeWeeklyDigest } from "../src/cli/digest.mjs";
@@ -209,8 +209,22 @@ async function main() {
       }
       case "doctor": {
         const r = runDoctor({ strict: args.strict, cwd: process.cwd() });
-        for (const line of r.ok) console.log("OK:", line);
-        for (const i of r.issues) console.log(i.level.toUpperCase() + ":", i.msg);
+        const k = await kernelHealth({ cwd: process.cwd() });
+        if (args.json) {
+          console.log(JSON.stringify({ ...r, kernel: k }, null, 2));
+        } else {
+          for (const line of r.ok) console.log("OK:", line);
+          for (const i of r.issues) console.log(i.level.toUpperCase() + ":", i.msg);
+          console.log("\nKernel (OpenCode / platform):");
+          console.log(`  opencode: ${k.opencode.installed ? "v" + k.opencode.version : "NOT INSTALLED"}`);
+          console.log(`  ollama:   ${k.ollama.reachable ? k.ollama.models + " models @ " + k.ollama.host : "unreachable @ " + k.ollama.host}`);
+          console.log(`  mcp:      ${k.mcp.ctoBrainWired ? "cto-brain wired" : (k.mcp.opencodeConfig ? "config present, cto-brain NOT wired" : "no opencode config")}`);
+          console.log(`  skills:   ${k.skills.claude} claude · ${k.skills.opencode} opencode   agents: ${k.agents.opencode}`);
+          console.log(`  providers:${k.providers.filter((p) => p.credentialPresent).map((p) => " " + p.id).join("") || " (local only)"}`);
+          console.log(`  gateway:  jarvis key ${k.gateway.jarvisKeyPresent ? "present" : "absent"}`);
+          console.log(`  git:      ${k.git.repo ? (k.git.clean ? "clean" : k.git.dirtyCount + " changed") : "not a repo"}`);
+          for (const w of k.warn) console.log("WARN:", w);
+        }
         if (!r.healthy) process.exit(1);
         break;
       }

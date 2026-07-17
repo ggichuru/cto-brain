@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { ensureDir, exists, packageRoot, systemBrainHome } from "../paths.mjs";
@@ -8,6 +9,7 @@ import { adapterHasCoreSkills, detectInstalledAdapters } from "../adapters/index
 import { adapterStatus, wireSkills } from "./adapters.mjs";
 import { loadAdapterSettings } from "../adapters/settings.mjs";
 import { bundledSkillsDir, listSkillNames } from "../paths.mjs";
+import { PROVIDER_PRESETS, getProvider, hasCloudCredential, resolveBaseUrl } from "../router/providers.mjs";
 
 export function runDoctor(opts = {}) {
   const strict = opts.strict === true;
@@ -75,6 +77,162 @@ export function runDoctor(opts = {}) {
   const healthy = strict ? errors.length === 0 : errors.length === 0;
 
   return { healthy, ok, issues, home, bundled, installed, adapters: wired, adapterStatus: status };
+}
+
+// --- Kernel / platform health probe for `cto-code doctor` (charter) ---
+//
+// Every side-effecting dependency is injected so tests are hermetic (no real
+// network, subprocess, or home). kernelHealth NEVER throws: each probe is
+// wrapped so a failure becomes a section with ok:false + a reason, never an
+// exception. It NEVER records secret VALUES — only booleans for presence.
+
+// Default opencode config path, respecting XDG_CONFIG_HOME like opencode-setup.
+function defaultOpencodeConfigPath(env = process.env) {
+  const base = env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
+  return path.join(base, "opencode", "opencode.jsonc");
+}
+
+export async function kernelHealth(opts = {}) {
+  const env = opts.env || process.env;
+  const cwd = opts.cwd || process.cwd();
+  const exec = opts.exec || ((cmd, args) => spawnSync(cmd, args, { encoding: "utf8", cwd }));
+  const fetchFn = opts.fetchFn || ((...a) => fetch(...a));
+  const readFileFn = opts.readFileFn || ((p) => fs.readFileSync(p, "utf8"));
+  const existsFn = opts.existsFn || exists;
+  const listSkillDirs = opts.listSkillDirs || ((dir) => listSkillNames(dir));
+  const listAgents =
+    opts.listAgents ||
+    ((dir) => {
+      try {
+        return fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
+      } catch {
+        return [];
+      }
+    });
+  const opencodeConfigPath = opts.opencodeConfigPath || defaultOpencodeConfigPath(env);
+  const homeSkillsDir = opts.homeSkillsDir || path.join(os.homedir(), ".claude", "skills");
+  const configBase = env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
+  const opencodeSkillsDir = opts.opencodeSkillsDir || path.join(configBase, "opencode", "skills");
+  const opencodeAgentDir = opts.opencodeAgentDir || path.join(configBase, "opencode", "agent");
+
+  const ok = [];
+  const warn = [];
+
+  // --- opencode CLI ---
+  const opencode = { installed: false, version: null };
+  try {
+    const res = exec("opencode", ["--version"]) || {};
+    if (res.status === 0) {
+      const out = String(res.stdout || "");
+      const m = out.match(/(\d+\.\d+\.\d+[\w.-]*)/);
+      opencode.version = m ? m[1] : out.trim() || null;
+      opencode.installed = true;
+      ok.push(`opencode installed${opencode.version ? ` (v${opencode.version})` : ""}`);
+    } else {
+      warn.push("opencode CLI not found — install it to use the sovereign coding terminal");
+    }
+  } catch {
+    warn.push("opencode CLI not found — install it to use the sovereign coding terminal");
+  }
+
+  // --- ollama reachability ---
+  const ollamaPreset = getProvider("ollama");
+  const host = resolveBaseUrl(ollamaPreset, env) || "http://127.0.0.1:11434";
+  const ollama = { reachable: false, host, models: 0 };
+  try {
+    const res = await fetchFn(`${host}/api/tags`);
+    if (res && res.ok) {
+      const body = await res.json();
+      ollama.models = Array.isArray(body?.models) ? body.models.length : 0;
+      ollama.reachable = true;
+      ok.push(`ollama reachable at ${host} (${ollama.models} model${ollama.models === 1 ? "" : "s"})`);
+    } else {
+      warn.push(`ollama not reachable at ${host} — local sovereign lane is down`);
+    }
+  } catch {
+    warn.push(`ollama not reachable at ${host} — local sovereign lane is down`);
+  }
+
+  // --- providers (credential PRESENCE only, never values) ---
+  const providers = [];
+  let anyCred = false;
+  for (const p of PROVIDER_PRESETS) {
+    let credentialPresent = false;
+    try {
+      credentialPresent = hasCloudCredential(p, env) === true;
+    } catch {
+      credentialPresent = false;
+    }
+    if (credentialPresent) anyCred = true;
+    providers.push({ id: p.id, tier: p.tier, credentialPresent, keyRequired: !!p.keyRequired });
+  }
+  if (anyCred) ok.push("provider credentials configured");
+  else warn.push("no provider credentials found — cloud lanes unavailable (local-only)");
+
+  // --- mcp: opencode config exists + wires cto-brain ---
+  const mcp = { opencodeConfig: false, ctoBrainWired: false };
+  try {
+    mcp.opencodeConfig = existsFn(opencodeConfigPath) === true;
+  } catch {
+    mcp.opencodeConfig = false;
+  }
+  if (mcp.opencodeConfig) {
+    try {
+      const raw = String(readFileFn(opencodeConfigPath) || "");
+      mcp.ctoBrainWired = raw.includes("cto-brain");
+    } catch {
+      mcp.ctoBrainWired = false;
+    }
+    if (mcp.ctoBrainWired) ok.push("cto-brain MCP wired into opencode");
+    else warn.push("opencode config present but cto-brain MCP not wired — run: cto-brain opencode setup");
+  } else {
+    warn.push("no opencode config found — run: cto-brain opencode setup");
+  }
+
+  // --- skills counts ---
+  const skills = { claude: 0, opencode: 0 };
+  try {
+    skills.claude = (listSkillDirs(homeSkillsDir) || []).length;
+  } catch {
+    skills.claude = 0;
+  }
+  try {
+    skills.opencode = (listSkillDirs(opencodeSkillsDir) || []).length;
+  } catch {
+    skills.opencode = 0;
+  }
+
+  // --- agents count ---
+  const agents = { opencode: 0 };
+  try {
+    agents.opencode = (listAgents(opencodeAgentDir) || []).length;
+  } catch {
+    agents.opencode = 0;
+  }
+
+  // --- gateway: jarvis key presence only ---
+  const gateway = { jarvisKeyPresent: !!env.JARVIS_API_KEY };
+  if (gateway.jarvisKeyPresent) ok.push("jarvis gateway key present");
+
+  // --- git status ---
+  const git = { repo: false, clean: null, dirtyCount: null };
+  try {
+    const res = exec("git", ["status", "--porcelain"]) || {};
+    if (res.status === 0) {
+      git.repo = true;
+      const lines = String(res.stdout || "")
+        .split("\n")
+        .filter((l) => l.trim().length > 0);
+      git.dirtyCount = lines.length;
+      git.clean = lines.length === 0;
+      if (git.clean) ok.push("git working tree clean");
+      else warn.push(`git working tree dirty (${git.dirtyCount} uncommitted change${git.dirtyCount === 1 ? "" : "s"})`);
+    }
+  } catch {
+    // not a repo / git missing → leave repo:false, clean:null, dirtyCount:null
+  }
+
+  return { opencode, ollama, providers, mcp, skills, agents, gateway, git, ok, warn };
 }
 
 export function installToAgents(opts = {}) {

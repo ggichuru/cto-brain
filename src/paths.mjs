@@ -59,6 +59,51 @@ export function writeText(p, content) {
   fs.writeFileSync(p, content, "utf8");
 }
 
+// --- ADR-0005: cto-code isolated runtime-state dir + atomic write + process lock ---
+
+// XDG-compatible state root for cto-code. Pure path — does NOT create the dir.
+// Honors XDG_STATE_HOME override (which is what makes it testable).
+export function stateDir(sub) {
+  const root = process.env.XDG_STATE_HOME
+    ? path.join(process.env.XDG_STATE_HOME, "cto-code")
+    : path.join(os.homedir(), ".local", "state", "cto-code");
+  return sub ? path.join(root, sub) : root;
+}
+
+// Atomic same-filesystem write: write to a temp sibling, then rename over the
+// target. Leaves no .tmp-* file behind on success. `data` is a string or Buffer.
+export function writeAtomic(filePath, data) {
+  ensureDir(path.dirname(filePath));
+  const temp = filePath + ".tmp-" + process.pid;
+  fs.writeFileSync(temp, data);
+  fs.renameSync(temp, filePath);
+}
+
+// Exclusive process lock. Creates <stateDir/locks>/<name>.lock with O_EXCL
+// (fail-if-exists), runs the sync fn, and always releases the lock (even on
+// throw). If the lock already exists, throws "cto-code: '<name>' is locked".
+export function withLock(name, fn) {
+  const dir = stateDir("locks");
+  ensureDir(dir);
+  const lockPath = path.join(dir, name + ".lock");
+  let fd;
+  try {
+    fd = fs.openSync(lockPath, "wx");
+  } catch (err) {
+    if (err.code === "EEXIST") {
+      throw new Error("cto-code: '" + name + "' is locked");
+    }
+    throw err;
+  }
+  try {
+    fs.writeSync(fd, String(process.pid));
+    return fn();
+  } finally {
+    fs.closeSync(fd);
+    fs.unlinkSync(lockPath);
+  }
+}
+
 export function listSkillNames(skillsRoot) {
   if (!exists(skillsRoot)) return [];
   return fs.readdirSync(skillsRoot, { withFileTypes: true })
