@@ -90,10 +90,14 @@ Verify, don't guess. No AI/agent attribution anywhere. Telemetry is local only.
 }
 
 // Build the opencode config object from the live local-model roster.
-export function buildOpencodeConfig(models, { baseUrl = "http://127.0.0.1:11434/v1", mcpBin } = {}) {
+export function buildOpencodeConfig(models, { baseUrl = "http://127.0.0.1:11434/v1", mcpBin, ensureModel } = {}) {
   // Only list GPU-safe models — exclude box-tanking giants (30b+ on GB10 spill to
   // CPU) so opencode's own model picker can't load one and slow the machine.
   const chat = models.filter((id) => tagModel(id).chat && fitsLocalGpu(id));
+  // A model the launcher will actually run (explicit --model or the resolved
+  // pick) MUST be listed, even if it's a giant the user opted into on purpose —
+  // otherwise opencode rejects it as an unknown model.
+  if (ensureModel && !chat.includes(ensureModel)) chat.push(ensureModel);
   const modelsMap = {};
   for (const id of chat) {
     const t = tagModel(id);
@@ -167,9 +171,50 @@ function isWired(cfgPath) {
   } catch { return false; }
 }
 
+// Reconcile an existing wired config's ollama model map with the LIVE roster so
+// newly pulled models load (and removed ones don't linger) WITHOUT clobbering
+// the rest of the user's config. This is the header's "picked up automatically"
+// promise — previously only kept on --reconfigure, so a model pulled after the
+// config was generated launched into "model not valid".
+//
+// Fail-safe: an empty roster (ollama unreachable) or a hand-edited/commented
+// config that won't JSON-parse is left untouched — never wipe on a transient.
+export function reconcileOllamaModels(cfgPath, models, { ensureModel } = {}) {
+  if (!Array.isArray(models) || models.length === 0) return { changed: false };
+  let cfg;
+  try { cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8")); }
+  catch { return { changed: false }; } // comments / hand-edits → leave it; --reconfigure regenerates
+  const ollama = cfg?.provider?.ollama;
+  if (!ollama || typeof ollama !== "object") return { changed: false };
+
+  const chat = models.filter((id) => tagModel(id).chat && fitsLocalGpu(id));
+  if (ensureModel && !chat.includes(ensureModel)) chat.push(ensureModel);
+  const desired = {};
+  for (const id of chat) {
+    const suffix = tagModel(id).capability === "vision" ? ", vision" : "";
+    // Preserve a user-customized display name for a model that's still present.
+    desired[id] = ollama.models?.[id] ?? { name: `${id} (local${suffix})` };
+  }
+
+  let changed = false;
+  if (JSON.stringify(ollama.models || {}) !== JSON.stringify(desired)) {
+    ollama.models = desired;
+    changed = true;
+  }
+  // Repair the default model if it now points at something no longer listed.
+  const cur = typeof cfg.model === "string" ? cfg.model.replace(/^ollama\//, "") : null;
+  if (cur && !desired[cur]) {
+    const ids = Object.keys(desired);
+    const best = pickToolModel(ids, "dispatch-builder") || pickByTask(ids, "dispatch-builder") || ids[0];
+    if (best) { cfg.model = `ollama/${best}`; changed = true; }
+  }
+  if (changed) fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2) + "\n");
+  return { changed };
+}
+
 // Ensure opencode is wired for cto-brain. Writes missing files; never clobbers an
 // existing config unless force=true (then backs it up). Returns a status object.
-export function ensureOpencodeWiring(models, { force = false } = {}) {
+export function ensureOpencodeWiring(models, { force = false, ensureModel } = {}) {
   const dir = opencodeConfigDir();
   const cfgPath = path.join(dir, "opencode.jsonc");
   const promptPath = path.join(dir, "cto-brain.md");
@@ -180,7 +225,7 @@ export function ensureOpencodeWiring(models, { force = false } = {}) {
 
   if (force || !fs.existsSync(promptPath)) { fs.writeFileSync(promptPath, CTO_PROMPT); written.push(promptPath); }
 
-  const cfg = buildOpencodeConfig(models, { mcpBin: ctoBrainBin() });
+  const cfg = buildOpencodeConfig(models, { mcpBin: ctoBrainBin(), ensureModel });
   const defaultModelId = cfg.model || "ollama/qwen2.5-coder:14b";
   if (force || !fs.existsSync(agentPath)) { fs.writeFileSync(agentPath, ctoAgent(defaultModelId)); written.push(agentPath); }
 
@@ -194,6 +239,10 @@ export function ensureOpencodeWiring(models, { force = false } = {}) {
     configState = "exists-unwired"; // present but missing our provider/mcp — leave it, hint --reconfigure
   } else {
     configState = "wired";
+    // Keep the model map current with the live roster so a model pulled after
+    // this config was generated still loads (the "model not valid" fix).
+    const rec = reconcileOllamaModels(cfgPath, models, { ensureModel });
+    if (rec.changed) { written.push(cfgPath); configState = "reconciled"; }
   }
 
   return { dir, cfgPath, written, configState, defaultModelId };

@@ -123,7 +123,7 @@ async function launchOpencode(model, opts) {
   // Auto-wire cto-brain into opencode (idempotent; --reconfigure forces a rewrite).
   let models = [];
   try { models = await listLocalChatModels(); } catch { /* handled by caller */ }
-  const w = ensureOpencodeWiring(models, { force: opts.reconfigure });
+  const w = ensureOpencodeWiring(models, { force: opts.reconfigure, ensureModel: model });
   if (w.written.length) process.stderr.write(`${sym.arrow()} ${dim("wired cto-brain into opencode")} ${dim("(" + w.configState + ")")}\n`);
   if (w.configState === "exists-unwired") {
     process.stderr.write(`${sym.warn()} ${dim("existing opencode config isn't cto-brain-wired; run")} cto-brain code --reconfigure ${dim("to regenerate")}\n`);
