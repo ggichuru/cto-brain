@@ -91,6 +91,58 @@ ok(
 );
 ok("lmstudio listed", listProviders().some((p) => p.id === "lmstudio"));
 
+// --- all-model gateway cloud presets (openrouter / moonshot / together) ---
+const gateways = [
+  {
+    id: "openrouter",
+    baseUrl: "https://openrouter.ai/api/v1",
+    baseEnv: "OPENROUTER_BASE_URL",
+    keyEnv: "OPENROUTER_API_KEY",
+    defaultModel: "openrouter/auto",
+    baseOverride: "http://127.0.0.1:9001/v1",
+  },
+  {
+    id: "moonshot",
+    baseUrl: "https://api.moonshot.ai/v1",
+    baseEnv: "MOONSHOT_BASE_URL",
+    keyEnv: "MOONSHOT_API_KEY",
+    defaultModel: "kimi-k2",
+    baseOverride: "http://127.0.0.1:9002/v1",
+  },
+  {
+    id: "together",
+    baseUrl: "https://api.together.xyz/v1",
+    baseEnv: "TOGETHER_BASE_URL",
+    keyEnv: "TOGETHER_API_KEY",
+    defaultModel: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    baseOverride: "http://127.0.0.1:9003/v1",
+  },
+];
+
+for (const g of gateways) {
+  const p = getProvider(g.id);
+  ok(`${g.id} preset present`, p?.id === g.id);
+  ok(`${g.id} tier cloud`, p?.tier === "cloud");
+  ok(`${g.id} keyRequired`, p?.keyRequired === true);
+  ok(`${g.id} openAiCompatible`, p?.openAiCompatible === true);
+  ok(`${g.id} baseUrl default`, p?.baseUrl === g.baseUrl);
+  ok(`${g.id} envKey is base-url override`, p?.envKey === g.baseEnv);
+  ok(`${g.id} apiKeyEnv is the key`, apiKeyEnvName(p) === g.keyEnv);
+  ok(`${g.id} default model`, p?.defaultModel === g.defaultModel);
+  ok(`${g.id} resolveBaseUrl default`, resolveBaseUrl(p, {}) === g.baseUrl);
+  ok(
+    `${g.id} resolveBaseUrl env override`,
+    resolveBaseUrl(p, { [g.baseEnv]: g.baseOverride + "/" }) === g.baseOverride
+  );
+  ok(`${g.id} hasApiKey false without key`, hasApiKey(p, {}) === false);
+  ok(`${g.id} hasApiKey true with key`, hasApiKey(p, { [g.keyEnv]: "x" }) === true);
+  // a bare base-URL env must NOT be mistaken for a credential
+  ok(`${g.id} base-url env is not a key`, hasApiKey(p, { [g.baseEnv]: "http://x" }) === false);
+  ok(`${g.id} cred false without key`, hasCloudCredential(p, {}) === false);
+  ok(`${g.id} cred true with key`, hasCloudCredential(p, { [g.keyEnv]: "x" }) === true);
+  ok(`${g.id} listed`, listProviders().some((x) => x.id === g.id));
+}
+
 if (failures) {
   console.error("\n" + failures + " failure(s)");
   process.exit(1);
