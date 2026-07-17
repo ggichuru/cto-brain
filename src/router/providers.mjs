@@ -148,7 +148,7 @@ export const PROVIDER_PRESETS = [
     probePath: "/models",
     openAiCompatible: true,
     keyRequired: true,
-    note: "One key -> 400+ models (Kimi K3, Claude, GPT, Llama). Model slug = provider/model. The default breadth lane; sovereign local stays the default overall.",
+    note: "One key -> 400+ models (Kimi K3, Claude, GPT, Llama). Model slug = provider/model. The default breadth lane; sovereign local stays the default overall. Default slug moonshotai/kimi-k3 verified present on the live OpenRouter model list (2026-07-17).",
   },
   {
     id: "together",

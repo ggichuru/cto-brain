@@ -14,9 +14,11 @@
 // aider (--backend aider, if installed). cto-brain stays backend-agnostic.
 
 import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 import { tagModel, pickByTask, toolCapable, pickToolModel } from "../router/capabilities.mjs";
 import { selectFromMenu, dim, green, sym } from "./ui.mjs";
-import { ensureOpencodeWiring, ensureAiderConventions, ensureCodexMcp } from "./opencode-setup.mjs";
+import { ensureOpencodeWiring, ensureAiderConventions, ensureCodexMcp, opencodeConfigDir } from "./opencode-setup.mjs";
 import { getProvider, hasApiKey, apiKeyEnvName } from "../router/providers.mjs";
 
 // Cloud lanes cto-code can escalate to (opt-in). Sovereign local stays the
@@ -190,11 +192,17 @@ async function launchAider(model, opts) {
 async function launchOpencodeCloud(cloud, opts) {
   let models = [];
   try { models = await listLocalChatModels(); } catch { /* cloud lane doesn't need local Ollama */ }
-  const w = ensureOpencodeWiring(models, { force: opts.reconfigure });
-  const modelRef = `${cloud.providerId}/${cloud.modelId}`;
-  if (w.configState === "wired" && !opts.reconfigure) {
-    process.stderr.write(`${sym.warn()} ${dim(`if opencode can't find the '${cloud.providerId}' provider, run`)} cto-brain code --reconfigure ${dim("to add cloud lanes to the config")}\n`);
+  // Make sure the opencode config carries this cloud provider block. If the
+  // config predates the key (block absent), force a rewrite so the very first
+  // launch-after-adding-a-key works instead of erroring inside opencode.
+  const cfgPath = path.join(opencodeConfigDir(), "opencode.jsonc");
+  let hasBlock = false;
+  try { hasBlock = new RegExp(`"${cloud.providerId}"\\s*:`).test(fs.readFileSync(cfgPath, "utf8")); } catch { /* no config yet */ }
+  const w = ensureOpencodeWiring(models, { force: opts.reconfigure || !hasBlock });
+  if (!hasBlock && w.written.length) {
+    process.stderr.write(`${sym.arrow()} ${dim(`added the '${cloud.providerId}' cloud lane to the opencode config`)}\n`);
   }
+  const modelRef = `${cloud.providerId}/${cloud.modelId}`;
   const agent = opts.noAgent ? null : (opts.agent || "cto");
   const args = [];
   if (agent) args.push("--agent", agent);
