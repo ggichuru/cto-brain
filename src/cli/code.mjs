@@ -17,6 +17,32 @@ import { spawn } from "node:child_process";
 import { tagModel, pickByTask, toolCapable, pickToolModel } from "../router/capabilities.mjs";
 import { selectFromMenu, dim, green, sym } from "./ui.mjs";
 import { ensureOpencodeWiring, ensureAiderConventions, ensureCodexMcp } from "./opencode-setup.mjs";
+import { getProvider, hasApiKey, apiKeyEnvName } from "../router/providers.mjs";
+
+// Cloud lanes cto-code can escalate to (opt-in). Sovereign local stays the
+// default; a lane only activates when the operator passes --lane <id> AND the
+// gateway's API key is present. The default overall posture is unchanged: no
+// cloud, no account, until you ask for it.
+const CLOUD_LANES = new Set(["openrouter", "together", "moonshot"]);
+
+// Resolve a cloud lane from --lane. Returns null for the sovereign/local path,
+// { error } when the lane is unknown or its key is missing (fail-closed, honest),
+// or { providerId, modelId, label } to launch a cloud model. Pure + testable.
+export function resolveCloudLane(opts, env = process.env) {
+  const lane = opts.lane;
+  if (!lane || lane === "sovereign" || lane === "local") return null;
+  if (!CLOUD_LANES.has(lane)) {
+    return { error: `unknown lane '${lane}'. use sovereign (default) | ${[...CLOUD_LANES].join(" | ")}` };
+  }
+  const preset = getProvider(lane);
+  if (!preset) return { error: `lane '${lane}' has no provider preset` };
+  if (!hasApiKey(preset, env)) {
+    return { error: `${preset.label} lane needs a key — set ${apiKeyEnvName(preset)} (it never touches committed config or shell history)` };
+  }
+  const modelId = (opts.model || preset.defaultModel || "").replace(/^ollama\//, "");
+  if (!modelId) return { error: `no model for lane '${lane}' — pass --model <slug> (e.g. moonshotai/kimi-k3)` };
+  return { providerId: lane, modelId, label: preset.label };
+}
 
 const OLLAMA_HOST = (process.env.OLLAMA_HOST || "http://127.0.0.1:11434").replace(/\/+$/, "");
 
@@ -32,7 +58,7 @@ async function listLocalChatModels() {
 export function parseCodeArgs(argv) {
   const rest = argv.slice(1); // drop the leading "code"
   const out = { model: null, task: null, backend: null, agent: null, noAgent: false,
-                reconfigure: false, positional: null, passthrough: [] };
+                reconfigure: false, lane: null, positional: null, passthrough: [] };
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
     if (a === "--") { out.passthrough.push(...rest.slice(i + 1)); break; }
@@ -42,6 +68,8 @@ export function parseCodeArgs(argv) {
     else if (a.startsWith("--task=")) out.task = a.slice("--task=".length);
     else if (a === "--backend") out.backend = rest[++i];
     else if (a.startsWith("--backend=")) out.backend = a.slice("--backend=".length);
+    else if (a === "--lane") out.lane = rest[++i];
+    else if (a.startsWith("--lane=")) out.lane = a.slice("--lane=".length);
     else if (a === "--agent") out.agent = rest[++i];
     else if (a.startsWith("--agent=")) out.agent = a.slice("--agent=".length);
     else if (a === "--no-agent") out.noAgent = true;
@@ -157,9 +185,41 @@ async function launchAider(model, opts) {
   });
 }
 
+// Launch opencode against a cloud lane (opt-in). Requests leave the box — the
+// banner says so. Sovereign local remains the default when no --lane is given.
+async function launchOpencodeCloud(cloud, opts) {
+  let models = [];
+  try { models = await listLocalChatModels(); } catch { /* cloud lane doesn't need local Ollama */ }
+  const w = ensureOpencodeWiring(models, { force: opts.reconfigure });
+  const modelRef = `${cloud.providerId}/${cloud.modelId}`;
+  if (w.configState === "wired" && !opts.reconfigure) {
+    process.stderr.write(`${sym.warn()} ${dim(`if opencode can't find the '${cloud.providerId}' provider, run`)} cto-brain code --reconfigure ${dim("to add cloud lanes to the config")}\n`);
+  }
+  const agent = opts.noAgent ? null : (opts.agent || "cto");
+  const args = [];
+  if (agent) args.push("--agent", agent);
+  args.push("-m", modelRef, ...opts.passthrough);
+  process.stderr.write(`${sym.arrow()} opencode on ${green(modelRef)}${agent ? dim(" · agent " + agent) : ""} ${dim(`(${cloud.label} · cloud lane — requests leave this box)`)}\n`);
+  const code = await run("opencode", args);
+  if (code === 127) process.stderr.write(`  install it: ${dim("npm i -g opencode-ai")}\n`);
+  return code;
+}
+
 export async function launchCode(argv) {
   const opts = parseCodeArgs(argv);
   const backend = (opts.backend || "opencode").toLowerCase();
+
+  // Cloud lane (opt-in, credential-gated). Only opencode carries the cloud
+  // provider blocks; sovereign local is the default when no --lane is passed.
+  const cloud = resolveCloudLane(opts, process.env);
+  if (cloud?.error) { process.stderr.write(`${sym.bad()} ${cloud.error}\n`); return 1; }
+  if (cloud) {
+    if (backend !== "opencode") {
+      process.stderr.write(`${sym.bad()} cloud lanes need the opencode backend (got '${backend}').\n`);
+      return 1;
+    }
+    return launchOpencodeCloud(cloud, opts);
+  }
 
   let models;
   try {
