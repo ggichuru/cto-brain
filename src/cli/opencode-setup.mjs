@@ -15,6 +15,54 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { tagModel, pickByTask, pickToolModel, fitsLocalGpu } from "../router/capabilities.mjs";
+import { getProvider, hasApiKey, apiKeyEnvName } from "../router/providers.mjs";
+
+// Curated model roster surfaced in opencode's picker per cloud gateway. The
+// gateway reaches far more; these are the sane defaults (Kimi K3 is the headline
+// frontier lane). opencode still accepts any `-m <provider>/<model>` at launch.
+const CLOUD_GATEWAYS = [
+  {
+    id: "openrouter",
+    models: {
+      "moonshotai/kimi-k3": { name: "Kimi K3 (OpenRouter)" },
+      "anthropic/claude-sonnet-4": { name: "Claude Sonnet 4 (OpenRouter)" },
+      "openai/gpt-4o": { name: "GPT-4o (OpenRouter)" },
+    },
+  },
+  {
+    id: "together",
+    models: {
+      "Qwen/Qwen2.5-Coder-32B-Instruct": { name: "Qwen2.5-Coder-32B (Together)" },
+      "moonshotai/Kimi-K2-Instruct": { name: "Kimi K2 (Together)" },
+    },
+  },
+  {
+    id: "moonshot",
+    models: {
+      "kimi-k3": { name: "Kimi K3 (Moonshot)" },
+      "kimi-k2": { name: "Kimi K2 (Moonshot)" },
+    },
+  },
+];
+
+// Build credential-gated cloud provider blocks for opencode. A gateway appears
+// ONLY when its API key is present in `env` — so the default config stays
+// sovereign/local ("no cloud, no account") until the operator opts in with a key.
+// Keys are referenced via opencode's `{env:VAR}` templating, never inlined.
+export function cloudProviderBlocks(env = process.env) {
+  const provider = {};
+  for (const g of CLOUD_GATEWAYS) {
+    const preset = getProvider(g.id);
+    if (!preset || !hasApiKey(preset, env)) continue;
+    provider[g.id] = {
+      npm: "@ai-sdk/openai-compatible",
+      name: preset.label,
+      options: { baseURL: preset.baseUrl, apiKey: `{env:${apiKeyEnvName(preset)}}` },
+      models: g.models,
+    };
+  }
+  return provider;
+}
 
 export function opencodeConfigDir() {
   const base = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
@@ -90,7 +138,7 @@ Verify, don't guess. No AI/agent attribution anywhere. Telemetry is local only.
 }
 
 // Build the opencode config object from the live local-model roster.
-export function buildOpencodeConfig(models, { baseUrl = "http://127.0.0.1:11434/v1", mcpBin } = {}) {
+export function buildOpencodeConfig(models, { baseUrl = "http://127.0.0.1:11434/v1", mcpBin, env = process.env } = {}) {
   // Only list GPU-safe models — exclude box-tanking giants (30b+ on GB10 spill to
   // CPU) so opencode's own model picker can't load one and slow the machine.
   const chat = models.filter((id) => tagModel(id).chat && fitsLocalGpu(id));
@@ -114,6 +162,7 @@ export function buildOpencodeConfig(models, { baseUrl = "http://127.0.0.1:11434/
         options: { baseURL: baseUrl },
         models: modelsMap,
       },
+      ...cloudProviderBlocks(env),
     },
     mcp: {
       "cto-brain": { type: "local", command: [mcpBin, "mcp"], enabled: true },

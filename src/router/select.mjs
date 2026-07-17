@@ -19,31 +19,31 @@ export const TASK_KINDS = [
 export const ROUTING_RULES = {
   "dispatch-builder": {
     preferTier: "local",
-    fallbackChain: ["ollama", "jarvis", "vllm", "llamacpp", "llama-swap", "lmstudio", "openai-compatible", "anthropic", "openai", "fugu", "cursor", "codex"],
+    fallbackChain: ["ollama", "jarvis", "vllm", "llamacpp", "llama-swap", "lmstudio", "openai-compatible", "anthropic", "openai", "openrouter", "moonshot", "together", "fugu", "cursor", "codex"],
     defaultModels: { ollama: "qwen2.5-coder:14b", jarvis: "qwen2.5-coder:14b", vllm: "", anthropic: "claude-sonnet-4-20250514" },
     rationale: "Builders run token-heavy; local coders OK when probe succeeds.",
   },
   "autonomous-build": {
     preferTier: "local",
-    fallbackChain: ["ollama", "jarvis", "vllm", "llamacpp", "llama-swap", "lmstudio", "openai-compatible", "anthropic", "openai", "fugu", "cursor", "codex"],
+    fallbackChain: ["ollama", "jarvis", "vllm", "llamacpp", "llama-swap", "lmstudio", "openai-compatible", "anthropic", "openai", "openrouter", "moonshot", "together", "fugu", "cursor", "codex"],
     defaultModels: { ollama: "qwen2.5-coder:14b", jarvis: "qwen2.5-coder:14b", anthropic: "claude-sonnet-4-20250514", openai: "gpt-4o" },
     rationale: "Sustained agentic coding loops; local first, cloud when keys or IDE session available.",
   },
   explore: {
     preferTier: "local",
-    fallbackChain: ["ollama", "jarvis", "vllm", "llama-swap", "lmstudio", "anthropic", "openai"],
+    fallbackChain: ["ollama", "jarvis", "vllm", "llama-swap", "lmstudio", "anthropic", "openai", "openrouter"],
     defaultModels: { ollama: "llama3.1" },
     rationale: "Read-only exploration; local sufficient for map-the-territory work.",
   },
   "reviewer-security": {
     preferTier: "cloud",
-    fallbackChain: ["anthropic", "openai", "fugu", "jarvis", "ollama"],
+    fallbackChain: ["anthropic", "openai", "openrouter", "moonshot", "fugu", "jarvis", "ollama"],
     defaultModels: { anthropic: "claude-sonnet-4-20250514", jarvis: "llama3.1:70b-instruct-q4_K_M" },
     rationale: "Security review benefits from stronger cloud models when available; jarvis (sovereign) for offline/local-prefer.",
   },
   "reviewer-tech": {
     preferTier: "cloud",
-    fallbackChain: ["anthropic", "openai", "fugu", "jarvis", "ollama"],
+    fallbackChain: ["anthropic", "openai", "openrouter", "moonshot", "fugu", "jarvis", "ollama"],
     defaultModels: { anthropic: "claude-sonnet-4-20250514", jarvis: "llama3.1:70b-instruct-q4_K_M" },
     rationale: "Tech-lead review: contract drift + API consistency need strong reasoning; jarvis (sovereign) for offline/local-prefer.",
   },
@@ -55,13 +55,13 @@ export const ROUTING_RULES = {
   },
   research: {
     preferTier: "auto",
-    fallbackChain: ["openai", "fugu", "anthropic", "jarvis", "ollama"],
-    defaultModels: { openai: "gpt-4o-mini", fugu: "fugu-ultra", jarvis: "llama3.1:70b-instruct-q4_K_M" },
+    fallbackChain: ["openai", "openrouter", "together", "fugu", "anthropic", "jarvis", "ollama"],
+    defaultModels: { openai: "gpt-4o-mini", openrouter: "moonshotai/kimi-k3", fugu: "fugu-ultra", jarvis: "llama3.1:70b-instruct-q4_K_M" },
     rationale: "External research: cloud preferred; local/sovereign if keys absent.",
   },
   integrate: {
     preferTier: "cloud",
-    fallbackChain: ["anthropic", "openai", "fugu", "jarvis", "ollama", "vllm"],
+    fallbackChain: ["anthropic", "openai", "openrouter", "moonshot", "fugu", "jarvis", "ollama", "vllm"],
     defaultModels: { anthropic: "claude-sonnet-4-20250514", jarvis: "llama3.1:70b-instruct-q4_K_M" },
     rationale: "Integration + merge decisions benefit from strong reasoning when cloud creds exist; jarvis (sovereign) as local fallback.",
   },
