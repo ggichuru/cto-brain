@@ -9,6 +9,7 @@ import { routerSelect, routerPlan, routerProbe, stackStatus, TASK_KINDS } from "
 import { adapterStatus } from "../cli/adapters.mjs";
 import { roundClose } from "../cli/round-close.mjs";
 import { gateCheck } from "../gate/pack.mjs";
+import { verifyOutcome } from "../gate/oracle.mjs";
 import { systemBrainHome } from "../paths.mjs";
 import { recordEvent } from "../telemetry/recorder.mjs";
 import { runEval } from "../eval/runner.mjs";
@@ -67,12 +68,36 @@ export const TOOLS = [
   {
     name: "gate_check",
     description:
-      "Security gate: scan a brain home for credential-like files and secrets in skills. Read-only.",
+      "Security gate + independent verification oracle. Default (no oracle): scan a brain home for " +
+      "credential-like files and secrets in skills. With `oracle`: resolve a claimed outcome against an " +
+      "INDEPENDENT signal — an external command's exit code or a supplied verifier result is the source of " +
+      "truth, never the caller's self-report. `proven` is true only when the oracle passes. Read-only.",
     inputSchema: {
       type: "object",
-      properties: { home: { type: "string", description: "Brain home to scan (default system brain)." } },
+      properties: {
+        home: { type: "string", description: "Brain home to scan (default system brain). Ignored when `oracle` is supplied." },
+        claim: {
+          type: "object",
+          description: "The agent's self-report of the outcome, e.g. { passed: true }. Recorded but never the source of 'proven'.",
+          properties: { passed: { type: "boolean", description: "Self-reported pass/fail." } },
+        },
+        oracle: {
+          type: "object",
+          description:
+            "Independent verifier. Supply `command` (argv array; exit 0 == pass) OR `result` (a boolean external verifier result). Presence switches gate_check into oracle mode.",
+          properties: {
+            command: { type: "array", items: { type: "string" }, description: "Argv to run (no shell); exit code 0 means proven." },
+            cwd: { type: "string", description: "Working directory for the command." },
+            timeoutMs: { type: "number", description: "Command timeout in ms (default 30000)." },
+            result: { type: "boolean", description: "A supplied external verifier result, used as the source of truth." },
+          },
+        },
+      },
     },
-    handler: (args) => gateCheck(args.home || systemBrainHome()),
+    handler: (args) =>
+      args && (args.oracle !== undefined || args.claim !== undefined)
+        ? verifyOutcome({ claim: args.claim, oracle: args.oracle })
+        : gateCheck(args.home || systemBrainHome()),
   },
   {
     name: "adapter_status",
