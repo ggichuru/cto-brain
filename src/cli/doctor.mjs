@@ -92,10 +92,37 @@ function defaultOpencodeConfigPath(env = process.env) {
   return path.join(base, "opencode", "opencode.jsonc");
 }
 
+function isExecutable(file) {
+  try {
+    const st = fs.statSync(file);
+    return st.isFile() && (st.mode & 0o111) !== 0;
+  } catch {
+    return false;
+  }
+}
+
+function resolveCommand(cmd, env = process.env) {
+  if (cmd.includes(path.sep)) return isExecutable(cmd) ? cmd : cmd;
+
+  const dirs = [
+    ...(env.PATH || "").split(path.delimiter).filter(Boolean),
+    process.execPath ? path.dirname(process.execPath) : null,
+    path.join(os.homedir(), ".local", "bin"),
+    path.join(os.homedir(), ".npm-global", "bin"),
+    path.join(os.homedir(), "bin"),
+  ].filter(Boolean);
+
+  for (const dir of dirs) {
+    const p = path.join(dir, cmd);
+    if (isExecutable(p)) return p;
+  }
+  return cmd;
+}
+
 export async function kernelHealth(opts = {}) {
   const env = opts.env || process.env;
   const cwd = opts.cwd || process.cwd();
-  const exec = opts.exec || ((cmd, args) => spawnSync(cmd, args, { encoding: "utf8", cwd }));
+  const exec = opts.exec || ((cmd, args) => spawnSync(resolveCommand(cmd, env), args, { encoding: "utf8", cwd, env }));
   const fetchFn = opts.fetchFn || ((...a) => fetch(...a));
   const readFileFn = opts.readFileFn || ((p) => fs.readFileSync(p, "utf8"));
   const existsFn = opts.existsFn || exists;

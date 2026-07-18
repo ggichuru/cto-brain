@@ -14,6 +14,9 @@
 // aider (--backend aider, if installed). cto-brain stays backend-agnostic.
 
 import { spawn } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { tagModel, pickByTask, toolCapable, pickToolModel } from "../router/capabilities.mjs";
 import { selectFromMenu, dim, green, sym } from "./ui.mjs";
 import { ensureOpencodeWiring, ensureAiderConventions, ensureCodexMcp, ctoBrainBin } from "./opencode-setup.mjs";
@@ -70,6 +73,36 @@ function warnIfNoTools(model, toolsRequired) {
   }
 }
 
+function isExecutable(file) {
+  try {
+    const st = fs.statSync(file);
+    return st.isFile() && (st.mode & 0o111) !== 0;
+  } catch {
+    return false;
+  }
+}
+
+export function resolveExecutable(cmd, { env = process.env, execPath = process.execPath } = {}) {
+  if (cmd.includes(path.sep)) return isExecutable(cmd) ? cmd : null;
+
+  const home = os.homedir();
+  const pathEntries = (env.PATH || "").split(path.delimiter).filter(Boolean);
+  const nodeBin = execPath ? path.dirname(execPath) : null;
+  const candidates = [
+    ...pathEntries,
+    nodeBin,
+    path.join(home, ".local", "bin"),
+    path.join(home, ".npm-global", "bin"),
+    path.join(home, "bin"),
+  ].filter(Boolean);
+
+  for (const dir of candidates) {
+    const p = path.join(dir, cmd);
+    if (isExecutable(p)) return p;
+  }
+  return null;
+}
+
 // Resolve a bare ollama model id: flag → positional name → task capability →
 // interactive picker. When toolsRequired (agentic backends like opencode), pick
 // among TOOL-CAPABLE models — a coder model that prints tool calls as text
@@ -111,7 +144,14 @@ async function resolveModel(opts, models, toolsRequired = false) {
 
 function run(cmd, args, env) {
   return new Promise((resolve) => {
-    const child = spawn(cmd, args, { stdio: "inherit", env: env ? { ...process.env, ...env } : process.env });
+    const mergedEnv = env ? { ...process.env, ...env } : process.env;
+    const resolved = resolveExecutable(cmd, { env: mergedEnv });
+    if (!resolved) {
+      process.stderr.write(`${sym.bad()} failed to launch ${cmd}: not found on PATH or next to node\n`);
+      resolve(127);
+      return;
+    }
+    const child = spawn(resolved, args, { stdio: "inherit", env: mergedEnv });
     child.on("exit", (code) => resolve(code ?? 0));
     child.on("error", (e) => {
       process.stderr.write(`${sym.bad()} failed to launch ${cmd}: ${e.message}\n`);
@@ -164,7 +204,12 @@ async function launchAider(model, opts) {
   const conv = ensureAiderConventions(); // cto-brain coding discipline (aider has no MCP)
   process.stderr.write(`${sym.arrow()} aider on ${green(model)} ${dim("(local Ollama · cto-brain conventions)")}\n`);
   const env = { ...process.env, OLLAMA_API_BASE: OLLAMA_HOST };
-  const child = spawn("aider", ["--model", `ollama_chat/${model}`, "--read", conv, ...opts.passthrough], { stdio: "inherit", env });
+  const aider = resolveExecutable("aider", { env });
+  if (!aider) {
+    process.stderr.write(`${sym.bad()} aider not found. install: ${dim("uv tool install aider-chat")}\n`);
+    return 127;
+  }
+  const child = spawn(aider, ["--model", `ollama_chat/${model}`, "--read", conv, ...opts.passthrough], { stdio: "inherit", env });
   return new Promise((resolve) => {
     child.on("exit", (c) => resolve(c ?? 0));
     child.on("error", () => { process.stderr.write(`${sym.bad()} aider not found. install: ${dim("uv tool install aider-chat")}\n`); resolve(127); });
