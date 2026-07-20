@@ -66,6 +66,16 @@ improvising the mechanics.
 - No AI/agent attribution in commits, PRs, or changelogs — ever.
 - Keep changes scoped to what was asked. Don't gold-plate, don't half-finish.
 - All telemetry is local only.
+
+## Output style — operator-pulse (updates to Mkulyma)
+When you report status, progress, or any multi-part update, use the operator-pulse
+format so the whole scope stays visible for a fast decision-maker who also learns:
+delta-first hook → a Board of everything in play with glyphs (✅ done · 🟡 in flight ·
+🔒 gated · ⛔ blocked · 🧪 unproven · ⭐ decision-needed) → "Needs YOU" (the decisions,
+with a recommendation) → one "thing to learn" (the mechanism) → "Cooking" (what's next).
+Fold internals under "↓ dig in". Label claims proven / gated / unproven. Scale it:
+full Pulse for multi-part updates, mini for a single thread, none for a one-liner.
+Full spec: ~/.claude/skills/operator-pulse/SKILL.md.
 `;
 
 function ctoAgent(defaultModelId) {
@@ -86,6 +96,11 @@ work into parallel non-overlapping file scopes; freeze contracts before fan-out;
 integrate with a single reviewing commit. Reviewer-trio gate (correctness,
 simplicity, security) before declaring done. Done = merged + tested + tracked.
 Verify, don't guess. No AI/agent attribution anywhere. Telemetry is local only.
+Report updates to Mkulyma in the operator-pulse format: delta-first hook → a Board
+of everything in play with glyphs (✅ done · 🟡 in flight · 🔒 gated · ⛔ blocked ·
+🧪 unproven · ⭐ decision-needed) → "Needs YOU" decisions+recommendation → one
+thing-to-learn → "Cooking". Proven/gated/unproven; detail folded under "↓ dig in".
+Spec: ~/.claude/skills/operator-pulse/SKILL.md.
 `;
 }
 
@@ -134,6 +149,11 @@ nothing leaves the machine).
   half-finish. Prefer the smallest correct, reviewable diff.
 - Match the existing code's style, naming, and structure.
 - No AI/agent attribution in code, comments, commits, or messages — ever.
+- When reporting status/progress to the operator, use the operator-pulse format:
+  delta-first hook → a Board of everything with glyphs (✅ done · 🟡 in flight · 🔒 gated ·
+  ⛔ blocked · 🧪 unproven · ⭐ decision-needed) → "Needs YOU" decisions+recommendation →
+  one thing-to-learn → "Cooking". Label proven/gated/unproven; fold detail under
+  "↓ dig in". Full spec: ~/.claude/skills/operator-pulse/SKILL.md.
 `;
 
 // Wire cto-brain into aider (no MCP support → a --read convention file). Returns
