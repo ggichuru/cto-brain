@@ -231,6 +231,54 @@ const enabledDefault = selectRoute({
 });
 ok("llama-swap enabled by default config", enabledDefault.provider === "llama-swap");
 
+// --- all-model gateway lanes (openrouter / moonshot / together) ---
+// Each gateway is reachable when ONLY its key is set (no earlier cloud cred, no local probe),
+// returning its default model — while deny-cloud-without-credential still holds.
+const gatewayCases = [
+  { id: "openrouter", keyEnv: "OPENROUTER_API_KEY", model: "openrouter/auto" },
+  { id: "moonshot", keyEnv: "MOONSHOT_API_KEY", model: "kimi-k2" },
+  { id: "together", keyEnv: "TOGETHER_API_KEY", model: "meta-llama/Llama-3.3-70B-Instruct-Turbo" },
+];
+
+for (const g of gatewayCases) {
+  const r = selectRoute({
+    task: "reviewer-tech",
+    prefer: "cloud",
+    probes: [],
+    env: { [g.keyEnv]: "test-key" }, // no anthropic/openai/fugu key, no local probe
+  });
+  ok(`${g.id} selected when only its key present`, r.provider === g.id);
+  ok(`${g.id} carries default model`, r.model === g.model);
+  ok(`${g.id} in reviewer-tech chain`, ROUTING_RULES["reviewer-tech"].fallbackChain.includes(g.id));
+}
+
+// deny-cloud-without-credential: no gateway key ⇒ gateways skipped ⇒ fall to sovereign floor
+const noGatewayKey = selectRoute({
+  task: "reviewer-tech",
+  prefer: "cloud",
+  probes: [mockLocalProbe],
+  env: {}, // no cloud creds at all
+});
+ok("no gateway key falls through to local floor", noGatewayKey.provider === "ollama");
+
+// breadth-after-primary-cloud invariant: gateways always come AFTER anthropic
+// (they are breadth alternatives, reached only when the primary direct cloud is unavailable),
+// which for local-prefer tasks also keeps them behind every local lane.
+for (const task of TASK_KINDS) {
+  const chain = ROUTING_RULES[task].fallbackChain;
+  const iAnthropic = chain.indexOf("anthropic");
+  for (const gid of ["openrouter", "moonshot", "together"]) {
+    const gi = chain.indexOf(gid);
+    ok(`${task} chain includes ${gid}`, gi !== -1);
+    ok(`${task} ${gid} after anthropic`, iAnthropic !== -1 && gi > iAnthropic);
+  }
+}
+
+// default enabledProviders whitelist must not filter the gateways out
+for (const gid of ["openrouter", "moonshot", "together"]) {
+  ok(`${gid} enabled by default config`, DEFAULT_ROUTER_CONFIG.enabledProviders.includes(gid));
+}
+
 if (failures) {
   console.error("\n" + failures + " failure(s)");
   process.exit(1);
