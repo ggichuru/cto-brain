@@ -5,6 +5,18 @@ description: Use when acting as the CTO / engineering lead orchestrating a multi
 
 # CTO orchestration
 
+> **Version 0.6.2** — 2026-07-29. **The continuity write is now step 5 of the
+> round-close ritual.** Found by audit: the ritual mandated a feedback file, a
+> growth-ledger row, and an operator report — but never named
+> `<repo>/.cto-brain/STATE.md`. Result across the portfolio: 13 of 18 repos had a
+> `.cto-brain/` directory and **no STATE.md at all**, while ~30 agent worktrees
+> wrote state that died with the worktree. State was written where the work
+> happened and never promoted to where the work lived, because no skill owned the
+> promotion. Role 9 now owns it (trunk, not worktree; overwrite STATE, append
+> HISTORY, update the PORTFOLIO row, commit all of it). Paired with the same fix
+> in `multi-agent-execution` (parent folds agent State deltas). Also: corrected
+> "Mkulyma" → **Mkulyma** throughout.
+>
 > **Version 0.6.1** — 2026-06-24. **cto-brain package benchmark docs** — peer comparison
 > (14 tools), measured scorecard, publish gate. See
 > `references/benchmark-peers.md` and npm package `docs/benchmark/`.
@@ -162,6 +174,14 @@ grill is the front-end mirror of the close-out report at the back end.
 Parallel agent calls in one message. Department heads when ≥4 builders
 share a domain. Reviewer trio per integration round.
 
+**Knowledge-ingest fleet** (2026-07-17): to ingest a large multi-source
+NotebookLM notebook, fan out one extraction agent per *theme* (each runs
+`notebooklm ask -n <id> --json` with the explicit `-n`, so no shared-context
+collision), each returning a tight *cited* synthesis you compose. Calibrate
+with ONE query first — never send N agents into a broken pipe. 5-wide ran
+clean with no rate-limit trips. Grounds an "ingest → memory → wire skills"
+round without any agent fabricating (final text = cited data, not prose).
+
 ### 3. Integrate
 
 Read every diff, run the validation matrix, write the single
@@ -241,7 +261,29 @@ Before declaring a round complete, run this 60-second loop:
    Silence is also a signal.
 4. **Append to the growth ledger** regardless: one row per round,
    format `YYYY-MM-DD | <round-tag> | <action-summary> | <lesson-or-noop>`.
-5. **Write the operator close-out report (MANDATORY).** Every round that
+5. **Write the continuity state (MANDATORY, and distinct from the
+   ledger).** The ledger records what the brain *learned*; state
+   records *where the work stands*. Both fire. Three files, and the
+   first one is the one that gets skipped:
+   - **`<repo>/.cto-brain/STATE.md`** — OVERWRITE (snapshot, not a
+     log). Write it to the **TRUNK** repo even when the round ran in
+     a worktree; a STATE.md that only exists under
+     `.claude/worktrees/<name>/` dies when the worktree is removed.
+     Template: `continuity` skill.
+   - **`<repo>/.cto-brain/HISTORY.md`** — APPEND one dated line
+     (what changed, why, commit SHA).
+   - **`~/.cto-brain/PORTFOLIO.md`** — update this project's ROW.
+     Do not append round narrative to it; PORTFOLIO is a snapshot
+     table and narrative belongs in HISTORY. A PORTFOLIO that has
+     grown stacked tables and prose sections has become a log and
+     needs rewriting, not appending.
+
+   Commit STATE.md and HISTORY.md with the round. Repos already track
+   `.cto-brain/memory/` and `.cto-brain/skills/`; the state files
+   belong in the same tracked set. See `[[continuity]]` for the
+   levels and `multi-agent-execution` for how a fanout parent folds
+   agent State deltas into this write.
+6. **Write the operator close-out report (MANDATORY).** Every round that
    did real work ends with a short, human-voiced report for the person in
    the chair — bottom line, what changed, how to use it (real commands),
    what's honestly not done, the one next move. Apply `human-voice-writing`.
@@ -284,6 +326,8 @@ following its instructions), not by improvising.
 | A new feedback file refines or contradicts an old one | `consolidate-memory` (targeted) | Same turn — don't let contradictions linger |
 | End of month / start of new project / "what changed?" | `project-impact-scribe` | Monthly, or on the user's prompt |
 | A domain skill (frontend-brain, sionna-expert, etc.) is the right home for the lesson, not CTO | Load that skill, edit it, run its tests if any | Same turn |
+| A round did real work in a repo (any round, not just a fanout) | `continuity` — write trunk STATE.md + HISTORY.md line + PORTFOLIO row | Same turn, EVERY round |
+| A worktree is about to be merged, abandoned, or removed | `continuity` — promote its STATE to the trunk repo FIRST | Before `git worktree remove` |
 | The lesson is purely about CTO behavior | Edit this skill | Same turn |
 | The lesson is about *how to learn* (meta) | Edit `agentic-learning-loop` | Same turn |
 | Routing / "which skill handles this?" came up | Edit `meta-brain` | Same turn |
@@ -296,7 +340,7 @@ cost — capture it cheaply.
 #### The growth scoreboard
 
 `memory/growth_ledger.md` is the visible record of the brain
-growing. One row per round, append-only. Mike can read it whenever
+growing. One row per round, append-only. Mkulyma can read it whenever
 he wants to see what the brain has learned this week. Format:
 
 ```
@@ -609,7 +653,7 @@ that project.
 - A reviewer-trio finding that points at brain-policy not project
   policy
 - Human signal received that the subordinate cannot interpret
-  ("Mike said X but my charter says Y")
+  ("Mkulyma said X but my charter says Y")
 
 When escalating, the subordinate writes `ESCALATE: <one-line>` at
 the top of STATUS.md and stops the in-flight work. The lead reads
@@ -1500,7 +1544,32 @@ Ship `make dev-up` that bootstraps secrets + brings up compose +
 starts the dev server in one command. Build it on the next pass if
 absent.
 
----
+### Verify OUTPUT QUALITY live, not just that it runs (LLM/agent features)
+
+For a feature whose deliverable is *model output* (a chat answer, a RAG
+synthesis, a generated artifact), a green unit/e2e suite proves the plumbing,
+NOT the quality. Tests assert structure and strings — they cannot see that the
+web-augmented chat returned dictionary pages as "sources" or that the model
+deflected ("I can't browse"). Only a LIVE query with the real toggles on shows
+it. Lesson from the Kioo hardening round (2026-07-15): 108 unit + 30 e2e were
+green while the live chat still surfaced "merriam-webster"/"Find a Grave" as
+sources. Fix such quality problems in deterministic CODE (query construction,
+result filtering) rather than the prompt when the model is a small local one —
+see `~/.claude/memory/feedback_web_search_result_filtering.md`. And when
+operationalizing on an agent harness, keep a long-lived demo server alive with a
+MINIMAL `nohup … & echo $!` that returns immediately (bundling `pkill`/readiness
+loops in the same compound signals the process group and kills it, exit 144) —
+see `feedback_persistent_bg_server_launch.md`.
+
+**"Live-proven" vs "seam-tested" — label the boundary honestly.** A capability that
+runs end-to-end against the REAL dependency (a router picking a live model, a CLI
+emitting a real card from the real host) is *live-proven*. A capability whose external
+call sits behind an injected/mocked seam — a paid API you have no key for, a network
+service you can't reach — is *seam-tested*: the logic is verified, the real round-trip is
+NOT. Never call the second "live-proven." In the edge-wave2 round the Together fine-tune
+lane's dry-run + fail-closed were live-proven but the actual Together API round-trip was
+only fake-fetch-tested; the reviewer caught the over-claim. State which one you have, and
+name what the LIVE run (with the key/credits/access) still has to confirm.
 
 ## Day-of-tag triage tree — verify-401 family of bugs
 
@@ -2544,3 +2613,28 @@ neutral — they all keep the loop alive.
 The CTO skill stays a generalist; the domain skills are the
 specialists. The CTO's job is to **know when to load which**, and
 to **update them all** when the lesson lands there rather than here.
+
+---
+
+## Autonomous multi-wave verification discipline (added 2026-07-18 — ULAP SCOPE RF digital-twin build, ~30 waves)
+
+A long autonomous "loop till it's done" build (user asleep, no human in the seat). The code was almost always right; **verification** is where waves failed. Four rules, each earned:
+
+### 1. Verification runs SYNCHRONOUSLY — never a "background watcher"
+
+Brief every browser/compute verify agent to run `timeout <N> node <driver>` in the **foreground** and read the result in-process. Agents that spawn a background job and pause "awaiting the completion notification for task &lt;id&gt;" **STALL** — the harness never re-invokes them and the stream watchdog kills them. This stalled the SAME agent **3× in a row** on the ray-viz verification. Catch-phrase in an agent's return that means it's about to hang: *"I'll wait for the completion notification."* Every verify brief must say: **"finish synchronously; do NOT spawn background watchers."** (Distinct from long-lived SERVERS, which DO use minimal `nohup` — see `feedback_persistent_bg_server_launch.md`.)
+
+### 2. A single-session backend service serializes the whole fleet
+
+Sionna RT (`:8768`) holds ONE session per process. Two agents doing scene-generate+compute clobber each other's session AND pollute any `nvidia-smi`-during-solve measurement. **Only one compute-driving agent at a time.** You can still parallelize: pair it with a backend-only-no-compute agent or a frontend-client-side-no-compute agent. Generalizes to any one-session-per-process resource (a loaded GPU model, a single migration lock, a stateful REPL). Add it to the pre-dispatch self-critique: "does this wave put two agents on the same single-session service?"
+
+### 3. Full-app-load gate, not a happy-path proof
+
+A CesiumViewer decomposition verified only the coverage-render path and shipped a **client-side crash** (an extracted hook threw on full app load the coverage proof never exercised). It also deployed to prod before I caught it. Rule for any refactor / whole-app change: verify **full app loads console-clean** (`crashed:false, hasApp:true, 0 pageerrors`) + every touched surface toggled, on a **throwaway port**, and only swap the live deploy when green. The narrow proof gives false-PROVEN.
+
+### 4. Two more traps
+
+- **`git add -A` in a shared worktree** swept a sibling agent's uncommitted files into the wrong commit. Brief: stage explicit paths only.
+- **Premature success claim**: I told the user "rays bounce off buildings" from a 3.7 km top-down shot; the full test showed they floated ~1700 m too high (an absolute-vs-local-z double-count). Verify at the scale/angle the defect would show; label PARTIALLY-PROVEN until the decisive view is captured. And swiftshader `getImageData` returns all-black even on a good render — assert from the scene-graph, screenshot for the human.
+
+Full lesson + the recurring datum-double-count domain note: `~/.claude/memory/feedback_agent_verification_discipline.md`.
