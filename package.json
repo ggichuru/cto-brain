@@ -42,7 +42,11 @@
       "./skills/tdd",
       "./skills/spec-driven",
       "./skills/diagnosing-bugs",
-      "./skills/domain-modeling"
+      "./skills/domain-modeling",
+      "./skills/documentation-discipline",
+      "./skills/arch-topology-diagrams",
+      "./skills/model-evaluation",
+      "./skills/grounded-sovereign-agentic-build"
     ]
   },
   "scripts": {
