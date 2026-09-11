@@ -177,7 +177,14 @@ const swapBuilder = selectRoute({
 ok("llama-swap selectable for builder (local)", swapBuilder.provider === "llama-swap");
 ok("llama-swap builder picks probed model", swapBuilder.model === "qwen3-coder-30b");
 ok("llama-swap builder baseUrl from probe", swapBuilder.baseUrl === "http://127.0.0.1:8080");
-ok("llama-swap builder honest", swapBuilder.honest === true);
+// Amended 2026-09-11. This used to assert honest===true, which encoded the defect it was
+// meant to guard: llama-swap declares no default model and this probe lists TWO, so the
+// route is decided by list order alone. Had the probe returned glm-4.5-air first, the
+// builder task would silently get a non-coder model. The route is still usable — but
+// nobody chose the model, and the report must say so. See test/router-model-provenance.mjs.
+ok("llama-swap builder marks the pick as arbitrary", swapBuilder.modelSource === "arbitrary-probe-pick");
+ok("llama-swap builder is NOT honest (no policy behind the model)", swapBuilder.honest === false);
+ok("llama-swap builder reason announces it", /ARBITRARY/.test(swapBuilder.reason || ""));
 
 const mockLmStudioProbe = {
   id: "lmstudio",
