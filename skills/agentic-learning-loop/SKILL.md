@@ -5,7 +5,71 @@ description: Use when reasoning about HOW this brain learns — not what it shou
 
 # Agentic learning loop
 
-> **Version 0.1.0** — 2026-05-15. The formal description of the
+> **Version 0.3.3** — 2026-08-12. **The loop has two record surfaces; do not
+> confuse them.** INTERNAL learning state (feedback files, growth ledger, replay
+> buffer) lives in `~/.claude/projects/-home-ulap01/memory/` and is how the brain
+> gets better. EXTERNAL work-of-record that a HUMAN picks up (tickets, weekly
+> updates, design docs, board triage) lives in Notion, and there is now a grounded
+> method for writing it: `cto-brain/references/notion-workspace.md` (two-lane
+> routing MCP=personal / PAT=Amini, retry-wrapped REST, archive-not-delete triage,
+> the ticket-discipline + humanizer-voice couplings). Round-close rule sharpened:
+> Role-9 still writes the feedback file + ledger row in-batch to MEMORY; when the
+> round produced work a human will act on, it ALSO lands in Notion via that method,
+> and the two must not be conflated (a weekly-update bullet is not a ledger row; a
+> feedback file is not a ticket). A shared Notion board is triaged by ARCHIVE
+> (reversible, 30-day trash), never by closing rows Done you cannot verify — the
+> false-green rule applies to the record surface too. See
+> [[reference-notion-access-lanes]].
+>
+> **Version 0.3.2** — 2026-08-11. Added the **Babel test** to the eval-gate
+> section: a one-image argument for why plausibility is zero evidence
+> (libraryofbabel.info contains every possible edit; only the selector adds
+> value). Study artifact with tests at `~/Ulap/babel-study`.
+>
+> **Version 0.3.1** — 2026-07-31. **Ledger-decay audit round.** A compliance audit
+> found the growth ledger dead for 13 days (last row 2026-07-18) while 41 feedback
+> files landed and skills kept getting edited — capture and propagation ran, but the
+> observability surface silently stopped, which also means the eval-gate has recorded
+> zero before→after deltas since v0.3.0 shipped it. Two corrections: (1) new debug
+> symptom "the ledger is dead while feedback flows" with the atomicity rule — the
+> ledger row is written in the SAME tool-batch as the feedback file, never as a
+> separate later step; check `growth_ledger.md` mtime ≥ newest `feedback_*.md` mtime.
+> (2) Path drift fixed: the live replay buffer + ledger are at
+> `~/.claude/projects/-home-ulap01/memory/` (verified on disk; the old
+> `~/.claude/memory/` does not exist), still mirrored to `~/claude-workspace/memory/`.
+> Honest structural note: auto-sync self-commits every skill edit to the workspace
+> repo, so "never self-merge a policy change" is currently aspirational — the PR gate
+> needs a mechanism (e.g. behavioral edits staged on a branch), not just a rule.
+>
+> **Version 0.3.0** — 2026-07-20. **Adopted the eval-gate + PR-merge discipline**
+> (from Nicolas Finet's "self-improving outbound on Codex" build; Karpathy's
+> thesis: *any metric you can evaluate cheaply can be handed to an agent swarm* —
+> he ran 700 experiments, kept the 20 that beat the benchmark). The loop gained
+> the two things it was soft on: **(1) an eval gate** — a behavioral/policy change
+> is adopted only if a *cheap eval improves*; if it doesn't, **revert and stop**
+> ("sounds reasonable" is not evidence; ask "did the change fix the known miss?").
+> **(2) PR-based human-merge** for behavioral/structural changes — the change lands
+> via a human-merged PR carrying the evidence + before/after eval score, never a
+> silent self-merge. **(3) one concept per change.** Trivial *additive* lessons
+> keep the fast same-turn path; anything cheaply scorable MUST be gated. See the
+> new "The eval gate + PR discipline" section. Being applied to ULAP next as a
+> concrete field-tuning loop (attach/bring-up outcomes → one config change →
+> attach-doctor eval → human-merged PR → cadence).
+>
+> **Version 0.2.1** — 2026-07-17. Two loop refinements from the
+> architecture-literacy ingest round: (1) **grounded-evidence retrieval
+> is now a first-class replay-buffer input** — two pinned NotebookLM
+> source-of-truth notebooks (AminiChain Lexicon + LLM Architecture
+> `b6ac2e64`) feed *cited* facts into memory, so a captured lesson can
+> arrive already-evidenced (≈T1/T2) instead of as folklore; query the
+> notebook before writing an architecture/domain fact into a skill.
+> (2) The **notebook-ingest fleet** (one extraction agent per theme,
+> each returning cited synthesis) is the canonical *exploration* shape
+> for a large multi-source corpus — see `cto-orchestration` Role 2.
+> Exploration-without-capture still applies: the fleet's output only
+> counts if it lands in memory + the relevant skill the same round.
+>
+> **Version 0.2.0** — 2026-07-17. The formal description of the
 > brain's learning mechanism. Companion to `cto-orchestration` (the
 > lead policy) and `meta-brain` (the router). Read this when you
 > want to reason about how the system gets better, not what to do
@@ -23,7 +87,7 @@ under-performing.
 
 - **Policy** = the union of all `SKILL.md` files in
   `~/.claude/skills/` (mirrored at `~/claude-workspace/skills/`).
-- **Replay buffer** = `~/.claude/memory/feedback_*.md` (mirrored to
+- **Replay buffer** = `~/.claude/projects/-home-ulap01/memory/feedback_*.md` (mirrored to
   `~/claude-workspace/memory/`). Append-only. Frontmatter-tagged.
 - **Update rule** = the round-close ritual in
   `cto-orchestration` Role 9: write a feedback file → propagate the
@@ -92,7 +156,7 @@ literally updating the policy. There is no other policy.
 
 ### 2. The replay buffer
 
-`~/.claude/memory/feedback_*.md` (mirrored to
+`~/.claude/projects/-home-ulap01/memory/feedback_*.md` (mirrored to
 `~/claude-workspace/memory/`) is the replay buffer. Each file is one
 experienced lesson:
 
@@ -135,9 +199,15 @@ At the end of every round:
   if signal:
     1. Write memory/feedback_<topic>.md
     2. Add line to memory/MEMORY.md
-    3. Edit the relevant SKILL.md (CTO, domain, or this one) IN THE SAME TURN
+    3. CLASSIFY the change — ONE concept only (split if more):
+         additive (new lesson/example, contradicts no rule, not cheaply scorable)
+           → edit the relevant SKILL.md IN THE SAME TURN  (the fast path)
+         behavioral/structural (edits an existing rule, OR is cheaply scorable)
+           → GATE IT: define + run a cheap eval; adopt ONLY if the score improves,
+             else REVERT and stop. Land it via a HUMAN-MERGED PR carrying the diff +
+             the one outcome/reason + before→after score. Never self-merge a policy change.
        — if no skill is the right home, fire skill-creator
-    4. Append row to memory/growth_ledger.md
+    4. Append row to memory/growth_ledger.md (record the eval delta if one ran)
   else:
     append "no-op" row to memory/growth_ledger.md
 
@@ -148,6 +218,44 @@ The rule is non-skippable. **Deferring the update step is the most
 common bug in the loop.** "I'll write it later" never works, because
 six rounds later the context has decayed and you don't write it at
 all. Write it now.
+
+### 3a. The eval gate + PR discipline (v0.3.0)
+
+Adopted from the "self-improving on Codex" pattern — the discipline that separates a
+system that *improves* from one that *drifts*. Enforced for any change that edits an
+existing rule or can be cheaply scored:
+
+**The eval gate — evidence, not plausibility.**
+- Before a behavioral/policy change is adopted, define a *cheap eval* it must beat: a
+  fixture set, a test, a metric, a scored replay. (ULAP: the attach-doctor taxonomy
+  fixtures, `tests/registry.txt` pass-rate, `openspec validate`, a coverage score.)
+- Run it before and after. **Adopt only if the score improves; if it stays flat or
+  drops, revert the edit and stop.** "It sounds reasonable" is how a weaker system
+  accepts a plausible-but-wrong change — the gate asks *"did it fix the known miss?"*
+- No cheap eval exists (subjective — voice, taste, a judgment call)? Mark it
+  `review_required`; propose it with the reasoning, don't pretend it's proven.
+- Put the *ugly* cases in the gate (near-misses, regressions, the case you wish it had
+  skipped). An eval of only obvious wins passes every reckless change.
+
+**PR-based human-merge — never self-merge a policy change.**
+- A behavioral/structural change lands via a **human-merged PR** carrying the diff, the
+  one outcome/reason behind it, and the before→after eval score. The loop does the work;
+  the human keeps the standard.
+- Trivial *additive* lessons keep the fast same-turn path — gating every micro-lesson
+  just trains you to skip the ritual.
+- **One concept per change.** Three rules edited at once and nobody can tell which
+  helped; the gate can't isolate the win. Split them.
+
+The failure this prevents: the loop becoming *documentation that drifts* — plausible
+edits piling up with no proof any helped. The gate makes each edit earn its place; the
+PR keeps a human on the merge.
+
+**The Babel test (2026-08-11).** libraryofbabel.info holds every possible page —
+including every brilliant-looking policy edit — and is worthless, because
+generation without selection is noise. An ungated change is a page pulled from
+Babel: value enters only at the selector (the eval, the failing test, the human
+merge). Proven by building the bijection: `~/Ulap/babel-study` (spec + property
+tests). Genesis: [[feedback-generation-is-free-selection-is-the-value]].
 
 ### 4. Periodic optimization
 
@@ -195,7 +303,7 @@ Three mechanisms keep the loop alive even when the CTO seat is
 empty:
 
 1. **Stop hook auto-sync** — after every Claude turn, `auto-sync.sh`
-   mirrors `~/.claude/skills/` + `~/.claude/memory/` +
+   mirrors `~/.claude/skills/` + `~/.claude/projects/-home-ulap01/memory/` +
    `~/.claude/settings/*.json` to `~/claude-workspace/`. State
    cannot drift off-disk. (Setup: `bootstrap/install-hook.sh`.)
 2. **Growth ledger append** — every round writes at least a no-op
@@ -264,6 +372,23 @@ any judgment call I might do differently next time? did the user
 react in a way I didn't predict?" Write any finding as a feedback
 file. If the answer is genuinely "no surprises", the domain is
 mature — schedule `project-impact-scribe` for the larger view.
+
+### Symptom: the ledger is dead while feedback flows
+
+Feedback files keep landing and skills keep getting edited, but
+`growth_ledger.md` hasn't gained a row in days.
+
+**Diagnosis:** the ritual's steps decoupled — capture (step 1) and
+propagation (step 3) became habit, but the ledger append (step 4) was
+treated as optional bookkeeping and silently dropped. Cost: plateau/storm
+detection goes blind, and eval deltas have nowhere to be recorded, so the
+eval gate can't be audited either.
+
+**Fix:** the ledger row is written in the SAME tool-batch as the feedback
+file — one atomic ritual, never "I'll append it later." Health check any
+time the loop is questioned: `growth_ledger.md` mtime must be ≥ the newest
+`feedback_*.md` mtime; if not, backfill one summary row per missed round-day
+from the feedback files' own dates, and say the backfill happened.
 
 ### Symptom: contradictory rules
 
@@ -336,6 +461,14 @@ Credited to `mattpocock/skills`.
   test (a captured lesson, not a guess).
 - `domain-modeling` — maintains `CONTEXT.md`, the project-local shared
   vocabulary that lowers the token cost of every future round.
+- `deep-research` (standing discipline, per `feedback_deep_research_discipline`)
+  — before any fact-dependent plan/build/decision, fan out parallel research
+  subagents per source cluster → structured briefs → an adversarial honesty gate
+  (verify citations/IDs, vendor-vs-independent benchmarks, real-vs-aspirational)
+  → persist durable facts to the replay buffer. Verified evidence is a reward
+  signal: it removes the rework a from-memory guess or a mis-cite causes
+  downstream (this round it caught arXiv:2507.20534=Kimi-K2-not-A2A-edge and the
+  zkML-of-LLM over-claim). Never answer a checkable fact question from memory.
 
 When you add such a discipline, classify it **model-invoked** (see
 `meta-brain` → Skill invocation classes) and list it here so the loop

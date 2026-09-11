@@ -5,14 +5,14 @@
 ## Goal
 
 Make `cto-brain code` a Claude-Code-like coding terminal that runs against
-the **jarvis.mkulyma.com** sovereign model gateway, with a model picker that
+the **your jarvis gateway** sovereign model gateway, with a model picker that
 selects by capability/usage. Built on **codex** (already installed; has the
 TUI; supports custom OpenAI providers). Ship as a cto-brain npm feature
 (Phase 1 publishes).
 
 ## Jarvis surface — VERIFIED LIVE 2026-06-26 (load-bearing facts)
 
-Base host `https://jarvis.mkulyma.com`. Open WebUI fronting local Ollama.
+Base host `$JARVIS_BASE_URL`. Open WebUI fronting local Ollama.
 Auth = `Authorization: Bearer $JARVIS_API_KEY` on every request.
 
 | Endpoint | Result with the key | Use |
@@ -109,7 +109,7 @@ CLI surface:
   - add `jarvis` preset to `PROVIDER_PRESETS` (providers.mjs): `tier:"local"`,
     `openAiCompatible:true`, `probePath:"/api/models"`, `keyRequired:true`,
     `envKey:"JARVIS_API_KEY"`, baseUrl from `JARVIS_BASE_URL` default
-    `https://jarvis.mkulyma.com`.
+    `$JARVIS_BASE_URL`.
   - remote model discovery for `/api/models` (`{data:[{id}]}`) in discover/probe.
   - capability tagger (NEW small module `src/router/capabilities.mjs`).
   - tests: extend `test/router-providers.mjs`, add `test/router-capabilities.mjs`

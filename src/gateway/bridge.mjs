@@ -1,4 +1,5 @@
-// cto-brain gateway — local OpenAI→Ollama bridge for jarvis.mkulyma.com.
+// cto-brain gateway — local OpenAI→Ollama bridge for an operator-owned gateway.
+// The upstream host comes from JARVIS_BASE_URL (or --jarvis-base). There is no default.
 //
 // jarvis (Open WebUI fronting local Ollama) exposes an OpenAI-shaped model
 // catalog (`GET /api/models`) and a WORKING completion surface only on the
@@ -23,7 +24,9 @@ import http from "node:http";
 import { randomUUID } from "node:crypto";
 
 const DEFAULT_PORT = 11475;
-const DEFAULT_JARVIS_BASE = "https://jarvis.mkulyma.com";
+// Intentionally empty: a public package must not ship one operator's hostname as every
+// installation's default upstream. Configure JARVIS_BASE_URL or pass --jarvis-base.
+const DEFAULT_JARVIS_BASE = "";
 
 // ── Pure translation helpers (unit-tested) ──────────────────────────────────
 
@@ -211,7 +214,7 @@ async function readBody(req, maxBytes = 16 * 1024 * 1024) {
  * @param {object} [opts]
  * @param {number} [opts.port]      Defaults to CTO_GATEWAY_PORT or 11475.
  * @param {string} [opts.host]      Defaults to 127.0.0.1.
- * @param {string} [opts.jarvisBase] Upstream base, default JARVIS_BASE_URL or jarvis.mkulyma.com.
+ * @param {string} [opts.jarvisBase] Upstream base, required, via JARVIS_BASE_URL or --jarvis-base.
  * @param {string} [opts.apiKey]    Bearer key, default process.env.JARVIS_API_KEY.
  * @param {AbortSignal} [opts.signal] Optional abort signal to close the server.
  * @returns {Promise<{server: import("node:http").Server, url: string, port: number, close: () => Promise<void>}>}
@@ -220,6 +223,12 @@ export async function startGateway(opts = {}) {
   const host = opts.host || "127.0.0.1";
   const port = Number(opts.port || process.env.CTO_GATEWAY_PORT || DEFAULT_PORT);
   const jarvisBase = (opts.jarvisBase || process.env.JARVIS_BASE_URL || DEFAULT_JARVIS_BASE).replace(/\/+$/, "");
+  if (!jarvisBase) {
+    throw new Error(
+      "gateway: no upstream configured — set JARVIS_BASE_URL or pass --jarvis-base. " +
+        "Refusing to start rather than default to someone else's host."
+    );
+  }
   const apiKey = opts.apiKey !== undefined ? opts.apiKey : process.env.JARVIS_API_KEY;
 
   const authHeaders = () => {

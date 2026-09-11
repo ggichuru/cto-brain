@@ -67,7 +67,7 @@ improvising the mechanics.
 - Keep changes scoped to what was asked. Don't gold-plate, don't half-finish.
 - All telemetry is local only.
 
-## Output style — operator-pulse (updates to Mkulyma)
+## Output style — operator-pulse (updates to the operator)
 When you report status, progress, or any multi-part update, use the operator-pulse
 format so the whole scope stays visible for a fast decision-maker who also learns:
 delta-first hook → a Board of everything in play with glyphs (✅ done · 🟡 in flight ·
@@ -96,7 +96,7 @@ work into parallel non-overlapping file scopes; freeze contracts before fan-out;
 integrate with a single reviewing commit. Reviewer-trio gate (correctness,
 simplicity, security) before declaring done. Done = merged + tested + tracked.
 Verify, don't guess. No AI/agent attribution anywhere. Telemetry is local only.
-Report updates to Mkulyma in the operator-pulse format: delta-first hook → a Board
+Report updates to the operator in the operator-pulse format: delta-first hook → a Board
 of everything in play with glyphs (✅ done · 🟡 in flight · 🔒 gated · ⛔ blocked ·
 🧪 unproven · ⭐ decision-needed) → "Needs YOU" decisions+recommendation → one
 thing-to-learn → "Cooking". Proven/gated/unproven; detail folded under "↓ dig in".

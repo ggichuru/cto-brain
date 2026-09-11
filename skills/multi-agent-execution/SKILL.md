@@ -1,9 +1,15 @@
 ---
 name: multi-agent-execution
-description: Default for technical execution with 2+ independent work units (audits, refactors, multi-file fixes, multi-themed work). Triggers parallel general-purpose subagent dispatch with non-overlapping file scopes, structured briefs, no-agent-commits rule, and a single integrating commit. Fire instead of serial editing whenever a punch list spans more than one theme (docs + code + config), more than 5 files, or 2+ independent slices.
+description: Default for technical execution with 2+ independent work units (audits, refactors, multi-file fixes, multi-themed work). Triggers parallel general-purpose subagent dispatch with non-overlapping file scopes, structured briefs, no-agent-commits rule, a single integrating commit, and the parent's continuity write (promote each agent's State delta into the TRUNK repo's .cto-brain/STATE.md + HISTORY.md + the PORTFOLIO row, in that same commit, so state survives the worktree). Fire instead of serial editing whenever a punch list spans more than one theme (docs + code + config), more than 5 files, or 2+ independent slices.
 ---
 
 # Multi-Agent Execution (Default Mode for Technical Work)
+
+> **Version 0.2.0** — 2026-09-11. First version stamp. This skill carried no
+> version header, so the package's currency check could not compare its bundled
+> copy against the system brain's and fell back to a raw content diff — which now
+> always differs, because the published copy is deliberately depersonalised.
+> Version discipline is doctrine; a skill without a stamp cannot be graded.
 
 ## Overview
 
@@ -118,12 +124,65 @@ Return a structured summary with EXACTLY this shape:
 ### Open questions / things parent should review
 - [List anything ambiguous you resolved, or flag things parent should double-check]
 
+### State delta
+- **Status after my slice:** [🟢 done / 🟡 partial / 🔴 blocked] — one line
+- **Next action for this slice:** [the very next step, or "none — complete"]
+- **Key facts a fresh session would need:** [ports, gotchas, the "don't do X" — or "none"]
+
 ## Reminders
 - DO NOT commit. Parent will integrate and commit.
 - DO NOT touch files outside your scope, even if you spot a problem there — flag it in "Open questions" instead.
 - DO NOT decide on scope changes unilaterally. If the fix list seems wrong, return a question instead of improvising.
 - Match existing repo conventions (Helm style, indentation, naming).
 ```
+
+## A brief is a ticket, and the same bar applies
+
+The six sections above are a ticket in a different costume. A subagent starts
+with none of your conversation, exactly like a colleague picking work off the
+backlog, so the bar from `amini-ticket-discipline` transfers directly:
+
+> Could someone who was not in the conversation start work in under 5 minutes?
+
+The failure modes transfer too, which is why briefs go wrong in the same three
+ways tickets do:
+
+| Brief failure | The ticket version of it | Cost |
+|---|---|---|
+| "Fix the auth bug" with no file:line | A bug with no repro steps | The agent re-derives your audit and burns half its window before editing anything |
+| Goal states the fix, not the outcome | Title names the solution, not the problem (`W-SOLUTION`) | The agent implements your guess instead of solving the problem, and cannot tell you your guess was wrong |
+| An ambiguity you left implicit | A field left empty rather than marked unknown | The agent invents a resolution silently. An **omitted** field is one a model fills in for you |
+
+So write `UNKNOWN - <who or what resolves it>` in a brief for the same reason you
+write it in a ticket. An empty line reads as "not applicable"; an explicit
+unknown reads as "return a question instead of guessing", which is what the
+Reminders section already asks for.
+
+**Do not run `ticket_lint.py` on a brief.** It checks bug and feature archetypes
+and would report a wall of irrelevant missing sections. Borrow the bar and the
+three failure modes, not the linter.
+
+## Open questions become tickets, at integration time
+
+An agent's `Open questions / things parent should review` block is the single
+highest-yield source of real tickets in the whole round, and the place they most
+often die. The agent found a genuine problem outside its file scope, flagged it
+because the Reminders told it to, and then the parent integrates, commits, and
+the observation evaporates with the worktree.
+
+At integration, split that block three ways:
+
+1. **Resolve now** if it is inside the round's scope and cheap.
+2. **File a ticket** if it is real work someone must pick up later. Load
+   `amini-ticket-discipline`, author mode. The agent's flag is raw material, not
+   a ticket: it usually states a conclusion ("the retry logic looks wrong")
+   where a ticket needs the observation and the evidence.
+3. **Drop it explicitly**, in the integrating commit body, with the reason.
+
+Never silently drop one. A flag that was raised and then vanished is worse than
+one never raised, because the next agent to touch that file will spend the same
+time rediscovering it. This is the same rule as closing a ticket with proof
+rather than "should be fixed".
 
 ## Coordination Rules
 
@@ -147,8 +206,12 @@ These are load-bearing — every one of them has saved a wave at some point:
 4. If any validation fails:
      - Fix inline OR dispatch a focused fix-agent for that scope
      - Never paper over with a vague "looks good"
-5. git add <explicit file list>    # NEVER `git add .` or `git add -A`
-6. git commit with a comprehensive message that honestly describes
+5. Promote state (see "Continuity" below) — fold every agent's
+   "State delta" into <repo>/.cto-brain/STATE.md, append one
+   HISTORY.md line, update the ~/.cto-brain/PORTFOLIO.md row.
+6. git add <explicit file list>    # NEVER `git add .` or `git add -A`
+   ...INCLUDING .cto-brain/STATE.md and .cto-brain/HISTORY.md
+7. git commit with a comprehensive message that honestly describes
    the WHOLE commit, not just one agent's slice. List each theme.
 ```
 
@@ -163,6 +226,50 @@ These are load-bearing — every one of them has saved a wave at some point:
 
 <optional longer body for non-obvious decisions>
 ```
+
+## Continuity — promote state before the worktree dies
+
+**The failure this prevents** (found by audit, 2026-07-29): agents run in
+throwaway worktrees. Their `.cto-brain/STATE.md` was current *inside the
+worktree* — but the trunk repo had none, so when the worktree was removed the
+state died with it. 13 of 18 repos had a `.cto-brain/` directory and **no
+STATE.md at all**; ~30 `agent-<hash>` worktrees had one and wrote nothing.
+State was being written where the work happened and never promoted to where the
+work *lived*. Nobody owned the promotion, so it never happened.
+
+**The rule: the parent promotes state in the same integrating commit.** An
+agent must never be asked to write STATE.md itself — that would violate the
+no-agent-commits rule and race the other agents. Agents return a **State
+delta**; the parent folds all deltas into one write.
+
+Three writes, all by the parent, all before `git commit`:
+
+1. **`<repo>/.cto-brain/STATE.md`** — OVERWRITE, it's a snapshot not a log.
+   Fold in every agent's State delta. Keep it to the `continuity` template:
+   one-liner, status, branch, where-we-are, next actions, open issues, key
+   facts, pick-up-by.
+2. **`<repo>/.cto-brain/HISTORY.md`** — APPEND one dated line: what this wave
+   changed, why, and the commit SHA once you have it.
+3. **`~/.cto-brain/PORTFOLIO.md`** — update this project's row only (status,
+   how-far, last-touched, next action). Do not append narrative; PORTFOLIO is a
+   snapshot table. Round narrative belongs in HISTORY.
+
+**Commit STATE.md and HISTORY.md.** They are the repo's memory and are useful
+to a teammate who clones it. Repos already track `.cto-brain/memory/` and
+`.cto-brain/skills/` — the state files belong in the same tracked set, not left
+untracked beside them.
+
+**If the round ran in a worktree that will be removed:** promote to the TRUNK
+repo path, not the worktree path. A STATE.md that only exists at
+`.claude/worktrees/<name>/.cto-brain/STATE.md` is already lost.
+
+**Anti-pattern:** "the worktree STATE.md is current, so we're covered." A
+worktree is scaffolding. If the state cannot survive `git worktree remove`, it
+was never written.
+
+This composes with — and does not replace — the `agentic-learning-loop` write.
+Continuity captures *state* (where we are); the loop captures *policy* (what we
+learned). A round that taught something does both.
 
 ## Validation Patterns by Tool
 
@@ -240,9 +347,30 @@ If you don't have a validation command for the stack, write one before dispatchi
 - [ ] Spot-checked at least one file per agent via `git diff`
 - [ ] Ran scope-appropriate validation for every theme
 - [ ] Resolved any "Open questions" the agents flagged
-- [ ] File-scoped `git add` (no `.` or `-A`)
+- [ ] Folded every agent's **State delta** into `<repo>/.cto-brain/STATE.md` (overwrite)
+- [ ] Appended one dated line to `<repo>/.cto-brain/HISTORY.md`
+- [ ] Updated this project's row in `~/.cto-brain/PORTFOLIO.md`
+- [ ] Promoted state to the **trunk** repo, not just the worktree
+- [ ] File-scoped `git add` (no `.` or `-A`) — including the two state files
 - [ ] Commit message honestly describes ALL themes, not just one
 
 ## Why This Is the Default
 
-Mike's preference, validated empirically twice in a single session: for any work that decomposes into independent thematic slices, parallel agent dispatch beats serial editing on wall clock, on focus, and on the parent's ability to spot integration issues. Serial editing is the fallback for genuinely indivisible work — not the default.
+the operator's preference, validated empirically twice in a single session: for any work that decomposes into independent thematic slices, parallel agent dispatch beats serial editing on wall clock, on focus, and on the parent's ability to spot integration issues. Serial editing is the fallback for genuinely indivisible work — not the default.
+
+## Worktree isolation × dispatch ordering (added 2026-08-06)
+
+If the parent session has run EnterWorktree, subagents inherit the pinned cwd and
+cross-repo agents WEDGE: every Bash spawn is refused ("isolated in worktree X but cwd
+resolved elsewhere"), Enter/ExitWorktree both refuse from inside the agent, and agents
+degenerate into helper-spawning churn (one such helper got flagged for routing around a
+permission denial — laundering risk, not progress).
+
+Rules:
+- **Dispatch cross-repo agents BEFORE entering your own worktree**, or ExitWorktree
+  (keep) first.
+- If an agent reports an isolation deadlock, stop the wave and reclaim the slice —
+  the parent doing small cross-repo fixes itself after ExitWorktree beats a helper
+  fleet on tokens AND wall-clock (proven 2026-08-06: four openspec fixes).
+- A permission denial in an agent's context isn't parent authorization either way:
+  review the agent's artifact, then act (or don't) under your own judgment.
