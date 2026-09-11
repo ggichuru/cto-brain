@@ -41,3 +41,23 @@ degrades, honestly, instead of failing.
 
 ## Frozen contracts
 (At freeze:) peers config schema; locality tag names; offline-mode semantics.
+
+## Review — 2026-09-11 (60 days open)
+
+**Recommendation: FREEZE, but only Phase 1.** The premise has strengthened since it was
+written: the operator now runs more than one capable box, so "one brain, many peers" is a
+real situation rather than an anticipated one, and the jarvis preset already proves the
+remote-provider shape. The risk is scope — peers + capability scoring + conformance
+weighting + locality rules + dispatch pinning + offline mode is not one change.
+
+Phase 1 worth freezing now: a `peers` list in router config, probe/plan aggregation across
+peers, and locality tags enforced at selection. Defer capability-weighted scoring and
+cto-orchestration lane pinning to a follow-on; they depend on measurements that do not
+exist yet.
+
+One thing this change must inherit from the 0.12.0 round: peer selection MUST carry
+`modelSource`. Routing across a fleet multiplies the "nobody chose this model" failure —
+the 0.12.0 defect picked an arbitrary model from one host's list; a fleet would pick an
+arbitrary model from an arbitrary host.
+
+**Verdict: UNSET — awaiting operator freeze/reject.**

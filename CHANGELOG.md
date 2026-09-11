@@ -1,8 +1,50 @@
 # Changelog
 
 All notable changes to **cto-brain**. Versions follow SemVer; pre-1.0 minors
-may add features freely. npm latest is 0.9.1; 0.11.0 is the current local tip
-(publish pending `npm login`).
+may add features freely. Check the published version with `npm view cto-brain
+version` rather than trusting a line in this file — the previous one claimed
+0.11.0 was the local tip while the repo had moved to 0.12.0 and npm was still
+serving 0.9.1, because CI (and therefore the release workflow) had been red
+since 2026-07-17.
+
+## 0.12.0
+- **CI could not pass, so nothing could ship** (`.github/workflows/{ci,release}.yml`):
+  both ran `npm run ci` with no install step while `package.json` declares a runtime
+  dependency (`@modelcontextprotocol/sdk`, added 2026-06-24). Every run from
+  2026-07-17 failed on `ERR_MODULE_NOT_FOUND`; `release.yml` shares the gate, so no
+  tag could publish and npm stayed on 0.9.1 through three local minors. Both
+  workflows now `npm ci` first, and `.github/workflows/README.md` no longer claims
+  "zero npm dependencies".
+- **The router no longer dispatches to a model nobody chose**
+  (`src/router/select.mjs`): `pickModel()` ranked `probed.models[0]` above the
+  declared defaults, so the head of a provider's model list shadowed policy.
+  `router select --task reviewer-security` returned `airan-e2b:v1` — a 4.6B
+  experimental fine-tune — for a security review, reporting `modelAvailable: true`
+  (trivially, since the model came from the list it was checked against) and no
+  warning. Order is now override > declared > probe, and every route carries
+  `modelSource`: `override` | `declared` | `probe-singleton` | `arbitrary-probe-pick`
+  | `none`. A single-model endpoint is honest; a menu with nothing declared sets
+  `honest: false` and says so in `reason`.
+- **`doctor` grades skill CURRENCY, not just presence** (`src/cli/doctor.mjs`): it
+  stopped at "skill present", so four bundled skills sat 1-3 minor versions behind
+  the system brain for 53 days behind nine green lines. It now compares version
+  stamps on both sides and reports stale / ahead / diverged, naming versions and the
+  fix command.
+- **Bundled skills promoted**: agentic-learning-loop 0.1.0 -> 0.3.3,
+  cto-orchestration 0.6.1 -> 0.6.2, meta-brain 0.2.0 -> 0.2.3,
+  multi-agent-execution stamped 0.2.0 (it had no version header at all).
+- **Four new skills**: documentation-discipline, arch-topology-diagrams,
+  model-evaluation, grounded-sovereign-agentic-build.
+- **Depersonalised for publication**: the package named its operator, their GPU
+  host and that host's town, and hardcoded a private gateway hostname in `src/` as
+  every installation's default upstream. The jarvis preset now has no default host
+  and `startGateway()` throws unless `JARVIS_BASE_URL` is set, rather than guessing.
+- **Two tests that asserted the defects were amended, not deleted**: the eval case
+  "confirms a model that IS in the probe list" probed `["llama3.2:1b"]` and asserted
+  `modelAvailable: true` while the router picked its model from that same list — a
+  tautology that could not fail, and did not, for the life of the bug.
+- **Docs**: README documents `adapter pick|status`; the jarvis integration doc no
+  longer publishes a private hostname.
 
 ## 0.11.0
 - **Router presets: llama-swap + LM Studio** (`src/router/{providers,discover,select,config}.mjs`):

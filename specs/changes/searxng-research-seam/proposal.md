@@ -39,3 +39,20 @@ and quarterly re-verify of research docs cite it.
 ## Frozen contracts
 (At freeze:) src/research/searx.mjs exports; SEARXNG_BASE_URL env; result shape
 {title,url,snippet,engine}.
+
+## Review — 2026-09-11 (60 days open)
+
+**Recommendation: FREEZE.** This is the smallest of the three, the most grounded (the
+engine was verified answering live JSON when the proposal was written), and it serves a
+standing working rule rather than a speculative capability — research-first against the
+operator's own engine instead of vendor search.
+
+Two caveats for the freeze, neither blocking: (1) the 2026-07-11 grounding is 60 days old,
+so re-probe `SEARXNG_BASE_URL` before implementing — a documented-live endpoint is not a
+currently-live endpoint, which is exactly how this round found a published gateway
+hostname returning HTTP 530. (2) "Degrades honestly (structured error, never a throw)" is
+the right contract, but 0.12.0 taught that an honest field with no consumer is decoration:
+whatever reads `unresponsive` must act on it, or the seam will report degraded results
+that nothing notices.
+
+**Verdict: UNSET — awaiting operator freeze/reject.**
