@@ -30,7 +30,16 @@ function run(args, opts = {}) {
 
 const tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), "cto-cli-home-"));
 const tmpProj = fs.mkdtempSync(path.join(os.tmpdir(), "cto-cli-proj-"));
-const env = { ...process.env, CTO_BRAIN_HOME: path.join(tmpHome, ".cto-brain") };
+// HOME is pinned to the temp dir on purpose. Adapter skill dirs resolve from HOME, so
+// without this the doctor checks below grade the DEVELOPER'S machine: they passed locally
+// (where ~/.claude and ~/.cursor exist) and failed on any bare runner. That divergence
+// went unnoticed for months because CI died earlier, at a missing install step.
+const env = {
+  ...process.env,
+  HOME: tmpHome,
+  USERPROFILE: tmpHome,
+  CTO_BRAIN_HOME: path.join(tmpHome, ".cto-brain"),
+};
 
 const homeInit = run(["init"], { env });
 ok("init for doctor exits 0", homeInit.status === 0);
@@ -90,8 +99,24 @@ ok("stack status exits 0", stack.status === 0);
 const stackJson = JSON.parse(stack.stdout);
 ok("stack status summary", stackJson.summary.total >= 1);
 
-const doctor = run(["doctor", "--strict"], { env });
-ok("doctor --strict exits 0", doctor.status === 0);
+// `doctor --strict` on a brain with no adapters wired must REFUSE, and say what to run.
+// The old single assertion ("exits 0") only held on a machine that already had adapter
+// dirs lying around; both lanes are now covered explicitly.
+// cwd is pinned to the temp project too: adapter detection also looks at the working
+// directory, and this repo's own checkout contains a .claude/ dir, so running from it
+// would mask the unwired case on a developer machine while a bare runner saw it.
+const doctorUnwired = run(["doctor", "--strict"], { env, cwd: tmpProj });
+ok("doctor --strict refuses when no adapters are wired", doctorUnwired.status !== 0);
+ok(
+  "doctor --strict names the fix",
+  /adapter wire/.test(`${doctorUnwired.stdout}${doctorUnwired.stderr}`)
+);
+
+const wire = run(["adapter", "wire", "--adapters", "claude-code"], { env, cwd: tmpProj });
+ok("adapter wire exits 0", wire.status === 0);
+
+const doctor = run(["doctor", "--strict"], { env, cwd: tmpProj });
+ok("doctor --strict exits 0 once adapters are wired", doctor.status === 0);
 
 fs.rmSync(tmpHome, { recursive: true, force: true });
 fs.rmSync(tmpProj, { recursive: true, force: true });
