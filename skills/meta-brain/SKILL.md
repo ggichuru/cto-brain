@@ -5,6 +5,28 @@ description: Use FIRST on any ambiguous intent — the router that maps the user
 
 # Meta-brain — the router
 
+> **Version 0.2.3** — 2026-08-11. Added the missing **`cto-brain`** row to the
+> core catalog. Its own install checklist claimed this was executed 2026-07-03,
+> but only `cto-brain router` (the CLI) was ever listed — so the software build
+> doctrine was unrouted while the hardware one was, and `silicon-design`'s
+> "route to the software build lane instead" pointed at nothing. Found while
+> installing `silicon-design`; a checklist that says "executed" is not evidence.
+>
+> **Version 0.2.2** — 2026-08-10. Added `silicon-design` to the
+> catalog (Domain skills) and the routing tree (branch 4b): the
+> hardware build doctrine — RTL / ASIC / FPGA / Tiny Tapeout. The
+> routing test is **"does the deliverable become gates?"**; a golden
+> model or a simulator is still software and routes to the software
+> build lane. Born from the `nr_gold` round on the GPU host.
+>
+> **Version 0.2.1** — 2026-07-16. Wired `notebooklm` into the
+> catalog (Document-creation table) and the routing tree (branch
+> 5b): source-grounded research & media synthesis (podcast / video /
+> report / quiz / flashcards / mind map / grounded chat) via Google
+> NotebookLM. CLI installed to a dedicated venv (`~/.venvs/notebooklm`,
+> notebooklm-py 0.7.3) and symlinked onto PATH; the only remaining
+> setup is the one-time Google OAuth (`notebooklm login`).
+>
 > **Version 0.2.0** — 2026-05-15. Added the lead-CTO vs
 > regular-CTO tier distinction in routing. A multi-project /
 > portfolio / cross-project intent fires lead-tier of
@@ -74,6 +96,7 @@ brain. Versioned. Keep it in sync when skills are added or removed.
 
 | Skill | Purpose | Fire when |
 |---|---|---|
+| `cto-brain` | **The software build doctrine.** SDD × TDD × model routing × the honesty protocol. What agents execute when the deliverable is real software. | The deliverable is working software: a feature, service, xApp, fix, refactor, pipeline, integration. Any moment code is about to be written without a spec or a failing test. **The software sibling of `silicon-design`** — that skill routes here when the artifact stays software, so this row must exist for that hand-off to resolve. |
 | `cto-orchestration` (regular tier) | The 9 CTO roles. Single-project orchestration. The pattern stack. Integration discipline. | Multi-step build *within one project*, agent dispatch, integration, review. **Default route for single-project engineering work.** |
 | `cto-orchestration` (lead tier) | Orchestrator-of-orchestrators. Deploys subordinate CTOs (one per project), monitors via per-project growth ledgers + STATUS.md, synthesizes lessons across the portfolio. | 2+ active projects with concurrent cadence, portfolio review, weekly digest, monthly lead-round, cross-project pattern detection, charter authoring, subordinate-CTO deployment. **Same skill file; different tier of operation. See the skill's "Lead-CTO tier" section.** |
 | `agentic-learning-loop` | Formal description of HOW the brain learns. State / action / reward / policy / replay buffer / update rule / periodic optimization. | Meta-cognition questions, designing a new skill that plugs into the loop, debugging a stuck loop, calibrating exploration vs exploitation. |
@@ -108,6 +131,8 @@ a user-invoked skill (see "Skill invocation classes").
 | `tdd` | Red-green-refactor against a fast feedback loop. | Building/changing logic with a definable correct answer; every bug fix's regression test. |
 | `diagnosing-bugs` | Reproduce → minimize → hypothesize → instrument → fix → regression-test. | Anything broken whose cause isn't obvious. Read the FIRST error, not the last. |
 | `domain-modeling` | Build + maintain `CONTEXT.md` shared vocabulary. | Start of a build; when a concept gets re-explained; when a load-bearing noun appears. |
+| `amini-ticket-discipline` | Amini's house standard for ticket CONTENT: bug / feature / security-finding archetypes, Gherkin acceptance criteria, severity-vs-priority, DPIA screen, Definition of Ready, plus a dependency-free linter. | Any unit of work is about to be handed to a human: filing, rewriting, or gating a ticket; turning a thread or an incident into durable work; "is this ready", "is this done". Also on any Linear team key or issue id. Owns what goes in the ticket; the vendor `linear` skill moves it. |
+| `playwright-testing-ground` | Playwright MCP as a testing ground: snapshot-first browsing = red/green, committed `.spec.ts` = the durable artifact. Enable `--caps=testing`. | Any browser/UI/web/e2e testing, driving Playwright MCP, reproducing a UI bug, generating/healing spec files, verifying a UI change end-to-end. Composes with `tdd` + `verify`. On spark: `--headless`, bundled chromium, `--ignore-https-errors`. |
 
 ### Domain skills (project- or topic-specific)
 
@@ -123,12 +148,13 @@ a user-invoked skill (see "Skill invocation classes").
 |---|---|---|
 | `frontend-brain` | Frontend / UX product engineering | Frontend builds, UI/UX work, dashboard surfaces |
 | `frontend-product-engineer` | Senior frontend / product eng patterns | React, Next.js, TypeScript, Tailwind, design-system, accessibility, "make this look better" |
-| `dgx-spark-remote-ops` | DGX Spark FE node ops (spark-5804, Limuru) | Anything spark-5804 / dgx-ops / remote-ops |
+| `dgx-spark-remote-ops` | DGX Spark FE node ops (remote site) | Anything the GPU host / dgx-ops / remote-ops |
 | `ulap-network-stack` | Slate / ULAP network topology | Slate-specific networking, Headscale, overlay providers |
 | `sionna-expert` / `sionna-rf-site-planning` | Sionna RT, RF site planning, 5G coverage | Anything RF, radio, propagation, coverage maps |
+| `silicon-design` | Hardware: RTL, ASIC, FPGA, tapeout | Anything that becomes gates — Verilog/VHDL, testbench/cocotb, yosys/synthesis, PDK/sky130, formal, Tiny Tapeout / `tt_um_*` / `info.yaml` / tile budget, GDS, shuttle. **The hardware sibling of the software build doctrine**: if the artifact stays software (including a golden model in Python), route to the software build lane instead. |
 | `vault-updater` | OpenBao / Vault updates | Vault secret rotation, policy edits |
 | `tutor` | Pedagogical mode | When Mike explicitly asks for tutor mode |
-| `mkulyma-brand-council` | The four-agent brand council for mkulyma | Anything carrying the mkulyma name — brand, voice, naming, visuals |
+| `brand-council` | The four-agent brand council for the operator's brand | Anything carrying the operator's brand name — brand, voice, naming, visuals |
 
 ### Document-creation skills (cowork plugins)
 
@@ -141,6 +167,7 @@ a user-invoked skill (see "Skill invocation classes").
 | `canvas-design` | Visual art, posters, design pieces |
 | `web-artifacts-builder` | Elaborate HTML / React / shadcn artifacts |
 | `doc-coauthoring` | Structured workflow for docs / proposals / specs |
+| `notebooklm` | Source-grounded research & media synthesis via Google NotebookLM. Turn a set of URLs/PDFs/YouTube/docs into a podcast (audio overview), video explainer, briefing/study-guide report, quiz, flashcards, mind map, or data table — plus grounded chat over the sources. CLI-backed (`notebooklm-py`, venv at `~/.venvs/notebooklm`, on PATH). **Needs one-time Google OAuth (`notebooklm login`) before any command runs.** |
 
 ### Cowork / setup skills
 
@@ -167,13 +194,26 @@ a user-invoked skill (see "Skill invocation classes").
         as usual.
 3. Is it a meta-cognition question ("how does this work")?
    → agentic-learning-loop.
-4. Is it a specific domain (frontend, RF, dgx-ops, slate, mkulyma)?
+4. Is it a specific domain (frontend, RF, dgx-ops, infrastructure, brand)?
    → that domain skill, optionally with cto-orchestration on top
      if the work is multi-day. If the domain is one of several
      active projects, the lead-CTO may also be on top (lead-tier
      reads it through the project's STATUS.md, doesn't dive in).
+4b. Does the deliverable become GATES (RTL / ASIC / FPGA / a
+    tapeout)? → silicon-design. The test is "does it become
+    hardware?", not "is it low-level" — a Python golden model or a
+    simulator is still software. Hardware has no patch release, so
+    this route is worth taking deliberately rather than by default.
 5. Is it document creation (docx / xlsx / pptx / pdf / canvas)?
    → that document skill. Always load BEFORE writing the file.
+5b. Is it "turn these sources into a podcast / video / briefing /
+    quiz / flashcards / mind map", "summarize these URLs/PDFs",
+    "audio overview", "study guide from my research", or grounded
+    chat over a source set?
+    → notebooklm. (Requires Google OAuth first — if unauthenticated,
+      surface `notebooklm login` before promising output.) A cto-brain
+      build round that produces research/docs may hand off here via
+      CTO Role 7 (Suggest+Ask).
 6. Is it a brand-new pattern with no obvious home?
    → cto-orchestration first (it'll Role-9 over to skill-creator
      when ready).
@@ -206,8 +246,8 @@ When 2+ skills could fire, use this precedence:
 5. **Maintenance trio fires from CTO Role 9, not direct user
    prompt** — unless the user explicitly asks ("clean up memory",
    "write the monthly report").
-6. **mkulyma-brand-council** fires alongside any other skill when
-   the work touches the mkulyma brand. It's a steward, not a
+6. **brand-council** fires alongside any other skill when
+   the work touches the operator's brand. It's a steward, not a
    replacement.
 
 ---

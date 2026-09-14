@@ -88,8 +88,8 @@ cto-brain sync --promote
 | `init [--project] [--name]` | Bootstrap system + optional project brain |
 | `sync [--pull\|--promote\|--project-only]` | Non-destructive mtime-wins sync (`rsync -au`, never `--delete`) |
 | `install` | Wire skills to Claude/Cursor/Codex adapters |
-| `doctor [--strict]` | Health check: skills, credentials, adapters |
-| `adapter list\|wire` | List or wire platform skill directories |
+| `doctor [--strict]` | Health check: skill presence **and version currency**, credentials, adapters |
+| `adapter list\|pick\|wire\|status` | List, choose, wire, or report platform skill directories |
 | `spec init\|check` | Openspec-style change contracts — scaffold + lint (`spec-driven` skill) |
 | `round-close [--outcome --tokens-in --tokens-out]` | Growth ledger row + cost-per-outcome telemetry |
 | `deploy-cto` | CHARTER + portfolio registration + first-round brief |

@@ -11,6 +11,44 @@ import { loadAdapterSettings } from "../adapters/settings.mjs";
 import { bundledSkillsDir, listSkillNames } from "../paths.mjs";
 import { PROVIDER_PRESETS, getProvider, hasCloudCredential, resolveBaseUrl } from "../router/providers.mjs";
 
+// Skills carry a `> **Version 0.6.2** — ...` line as their first version stamp.
+// Returns the first such version, or null when the file has none.
+export function readSkillVersion(file) {
+  if (!exists(file)) return null;
+  const head = fs.readFileSync(file, "utf8").slice(0, 4000);
+  const m = head.match(/\*\*Version\s+(\d+(?:\.\d+)*)\*\*/i);
+  return m ? m[1] : null;
+}
+
+function cmpSemverish(a, b) {
+  const pa = String(a).split(".").map(Number);
+  const pb = String(b).split(".").map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const x = pa[i] || 0;
+    const y = pb[i] || 0;
+    if (x !== y) return x < y ? -1 : 1;
+  }
+  return 0;
+}
+
+// Compare the copy this package would publish against the copy the system brain runs.
+// `stale` = the package is behind the live brain, i.e. publishing now ships old doctrine.
+export function compareSkillVersion(bundledFile, systemFile) {
+  const bundled = readSkillVersion(bundledFile);
+  const system = readSkillVersion(systemFile);
+  if (bundled && system) {
+    const c = cmpSemverish(bundled, system);
+    return { bundled, system, stale: c < 0, ahead: c > 0, divergedUnversioned: false };
+  }
+  // No version header on one side: fall back to a content comparison so silent drift
+  // still surfaces, just without a version to name.
+  let diverged = false;
+  if (exists(bundledFile) && exists(systemFile)) {
+    diverged = fs.readFileSync(bundledFile, "utf8") !== fs.readFileSync(systemFile, "utf8");
+  }
+  return { bundled, system, stale: false, ahead: false, divergedUnversioned: diverged };
+}
+
 export function runDoctor(opts = {}) {
   const strict = opts.strict === true;
   const issues = [];
@@ -22,8 +60,35 @@ export function runDoctor(opts = {}) {
   const installed = exists(layout.skills) ? listSkillNames(layout.skills) : [];
 
   for (const name of bundled) {
-    if (installed.includes(name)) ok.push(`skill present: ${name}`);
-    else issues.push({ level: strict ? "error" : "warn", msg: `missing system skill: ${name}` });
+    if (!installed.includes(name)) {
+      issues.push({ level: strict ? "error" : "warn", msg: `missing system skill: ${name}` });
+      continue;
+    }
+    // Presence is not currency. Until 2026-09-11 this loop stopped at "present", and
+    // four bundled skills drifted 1-3 minor versions behind the system brain for 53 days
+    // while doctor printed nine green lines. Compare the versions and say so.
+    const drift = compareSkillVersion(
+      path.join(bundledSkillsDir(), name, "SKILL.md"),
+      path.join(layout.skills, name, "SKILL.md")
+    );
+    if (drift.stale) {
+      issues.push({
+        level: strict ? "error" : "warn",
+        msg: `stale bundled skill: ${name} — package ${drift.bundled}, system ${drift.system}; run \`cto-brain sync --promote\``,
+      });
+    } else if (drift.ahead) {
+      issues.push({
+        level: "warn",
+        msg: `system skill behind package: ${name} — package ${drift.bundled}, system ${drift.system}; run \`cto-brain sync --pull\``,
+      });
+    } else if (drift.divergedUnversioned) {
+      issues.push({
+        level: "warn",
+        msg: `bundled skill differs from system copy: ${name} (no version header to compare) — diff before publishing`,
+      });
+    } else {
+      ok.push(`skill present + current: ${name}${drift.bundled ? ` (${drift.bundled})` : ""}`);
+    }
   }
 
   const credHits = scanForCredentials(home);

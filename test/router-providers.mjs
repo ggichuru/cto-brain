@@ -48,7 +48,14 @@ ok("jarvis openAiCompatible", jarvis?.openAiCompatible === true);
 ok("jarvis keyRequired", jarvis?.keyRequired === true);
 ok("jarvis probePath /api/models", jarvis?.probePath === "/api/models");
 ok("jarvis default model", jarvis?.defaultModel === "qwen2.5-coder:14b");
-ok("jarvis baseUrl default", resolveBaseUrl(jarvis, {}) === "https://jarvis.mkulyma.com");
+// Amended 2026-09-11: the package used to ship one operator's private hostname as the
+// default upstream for every installation. There is now no default — an unconfigured
+// jarvis resolves to null and the caller must set JARVIS_BASE_URL.
+ok("jarvis has no baked-in default host", resolveBaseUrl(jarvis, {}) === null);
+ok(
+  "jarvis default is not a real hostname",
+  !/https?:\/\/[a-z0-9.-]+\.[a-z]{2,}/i.test(String(resolveBaseUrl(jarvis, {}) || ""))
+);
 ok("jarvis baseUrl env override", resolveBaseUrl(jarvis, { JARVIS_BASE_URL: "http://127.0.0.1:11475/" }) === "http://127.0.0.1:11475");
 ok("jarvis key env name", apiKeyEnvName(jarvis) === "JARVIS_API_KEY");
 ok("jarvis hasApiKey false without key", hasApiKey(jarvis, {}) === false);

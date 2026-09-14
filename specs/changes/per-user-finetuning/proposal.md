@@ -68,3 +68,21 @@ their routing corrections — compounding below the context window.
   ts}` — the same shape `skill synth` reads, so the two legs share exhaust.
 - Adapter layout: `~/.cto-brain/adapters/<user>/<name>/{adapter.safetensors,
   MANIFEST.json}` with base-model id + eval scores pinned in the manifest.
+
+## Review — 2026-09-11 (60 days open)
+
+**Recommendation: REJECT the rollout; re-scope to the experiment and freeze THAT.**
+
+This proposal already argues against itself, honestly: own-repo LoRA improving *agentic*
+coding is recorded as UNPROVEN (vendor assertion, no benchmarks), while skill-file
+in-context learning has measured evidence today. A change whose central benefit is
+unproven should not be frozen as a feature — freezing it commits the project to shipping
+a capability nobody has shown works.
+
+The honest artifact is the controlled experiment its own acceptance criteria describe: a
+control arm, a fixed task set, and a measured delta against the skill-file baseline. Split
+it: freeze `per-user-finetuning-experiment` (run the trial, publish the number, no trainer
+seam in the product), and leave the product change proposed until the experiment returns a
+positive result. If the experiment says no, that is a finding worth more than the feature.
+
+**Verdict: UNSET — awaiting operator freeze/reject/re-scope.**

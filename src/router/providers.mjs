@@ -129,7 +129,11 @@ export const PROVIDER_PRESETS = [
   {
     id: "jarvis",
     label: "jarvis (sovereign gateway)",
-    baseUrl: "https://jarvis.mkulyma.com",
+    // No default host. This is an operator-owned gateway, and until 2026-09-11 the
+    // package shipped one specific private hostname as every installation's default —
+    // which both published that host and pointed other people's installs at a stranger's
+    // box. Set JARVIS_BASE_URL. With no API key set the router skips this provider anyway.
+    baseUrl: null,
     envKey: "JARVIS_BASE_URL",
     apiKeyEnv: "JARVIS_API_KEY",
     defaultModel: "qwen2.5-coder:14b",

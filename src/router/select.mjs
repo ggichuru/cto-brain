@@ -120,12 +120,15 @@ export function selectRoute(opts = {}) {
     if (preset.tier === "cloud" && preset.keyRequired && !credOk) continue;
     if (preset.tier === "local" && !probed && !opts.allowUnprobedLocal) continue;
 
-    const model = pickModel(preset, probed, rule, taskOverride);
+    const { model, source: modelSource } = pickModel(preset, probed, rule, taskOverride);
     const baseUrl = probed?.baseUrl || resolveBaseUrl(preset, env);
     const modelAvailable = checkModelAvailable(model, probed);
     let reason = buildReason(preset, probed, rule, taskOverride, prefer);
     if (modelAvailable === false) {
       reason += `; WARNING: model '${model}' is not in the probed list [${(probed.models || []).join(", ")}] — pull it on ${providerId} or set router.json to an available tag`;
+    }
+    if (modelSource === "arbitrary-probe-pick") {
+      reason += `; ARBITRARY: no model is declared for task '${task}' on ${providerId}, so the router took the first entry the provider listed ('${model}'). Nobody chose this. Set routing rules or router.json before trusting the result.`;
     }
 
     return {
@@ -136,9 +139,11 @@ export function selectRoute(opts = {}) {
       task,
       prefer,
       reason,
-      honest: true,
+      // honest=false means the route is usable but no policy stands behind the model.
+      honest: modelSource !== "arbitrary-probe-pick",
       fallbackUsed: probed ? false : preset.tier === "cloud" && credOk,
       modelAvailable, // true = in probe list; false = NOT present (dispatch will fail); null = no list to check (cloud/unprobed)
+      modelSource, // "override" | "declared" | "probe-singleton" | "arbitrary-probe-pick" | "none"
     };
   }
 
@@ -213,12 +218,29 @@ function checkModelAvailable(model, probed) {
   return null;
 }
 
+// Returns { model, source }. Source is load-bearing: it tells a consumer whether a
+// human ever chose this model, or whether the router grabbed whatever the provider
+// happened to list first.
+//
+// Order matters and is the fix for a 2026-09-11 defect: `probed.models[0]` used to sit
+// ABOVE the declared defaults, so the head of ollama's list shadowed policy. A security
+// review silently routed to `airan-e2b:v1` (a 4.6B experimental fine-tune) with
+// modelAvailable:true — trivially true, since the model was drawn from the very list it
+// was checked against. The arbitrary pick also pre-empted the missing-model WARNING, so
+// the honesty layer never fired for any task without an explicit override.
 function pickModel(preset, probed, rule, taskOverride) {
   if (taskOverride?.model && (!taskOverride.provider || taskOverride.provider === preset.id)) {
-    return taskOverride.model;
+    return { model: taskOverride.model, source: "override" };
   }
-  if (probed?.models?.length) return probed.models[0];
-  return rule.defaultModels?.[preset.id] || preset.defaultModel || "";
+  const declared = rule.defaultModels?.[preset.id] || preset.defaultModel || "";
+  if (declared) return { model: declared, source: "declared" };
+  // Nobody declared a model for this task/provider pair, so fall back to the probe.
+  // One model served = not a choice at all, it is the only thing the endpoint will
+  // answer with (the normal LM Studio / single-slot llama-swap case) — that is honest.
+  // Two or more = the router is picking by list order, which nobody chose; say so.
+  if (probed?.models?.length === 1) return { model: probed.models[0], source: "probe-singleton" };
+  if (probed?.models?.length) return { model: probed.models[0], source: "arbitrary-probe-pick" };
+  return { model: "", source: "none" };
 }
 
 function buildReason(preset, probed, rule, taskOverride, prefer) {

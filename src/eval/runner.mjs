@@ -18,6 +18,7 @@ function runRouteCase(input) {
     honest: r.honest ?? null,
     fallbackUsed: r.fallbackUsed ?? null,
     modelAvailable: r.modelAvailable ?? null,
+    modelSource: r.modelSource ?? null,
   };
 }
 
